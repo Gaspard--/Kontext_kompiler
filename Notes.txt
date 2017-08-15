@@ -129,7 +129,7 @@ In fact this is true for any prefix, the use case of having a lowest prefix (and
 
 3) Examples
 
-"a + b * c;"
+"a = b * c;"
 
 a
 -> returns value
