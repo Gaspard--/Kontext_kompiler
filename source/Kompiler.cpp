@@ -3,34 +3,22 @@
 
 void Kompiler::process(std::istream &stream)
 {
-  test.emplaceToken("BigToken", 1);
-  test.emplaceToken("SmallToken", 2);
-  test.emplaceToken("Yes", 3);
-  std::istreambuf_iterator<char> start(stream);
+  auto isEndOfLine([](char c)
+		   {
+		     return c == '\n' || c == ';';
+		   });
+  /**
+   * Note that this iterator is single pass (this explains the code below)
+   */
+ std::istreambuf_iterator<char> begin(stream);
 
-  while (start != std::istreambuf_iterator<char>{})
+ while (begin != std::istreambuf_iterator<char>{})
     {
-      std::istreambuf_iterator<char> best;
-      auto tokenRange(test.getRootTokenRange());
-      auto bestToken{tokenRange.begin};
+      std::string line;
 
-      for (auto it(start); !tokenRange.isEmpty() && it != std::istreambuf_iterator<char>{}; ++it)
-	{
-	  tokenRange = tokenRange[*it];
-	  if (tokenRange.hasExactMatch())
-	    {
-	      best = it;
-	      bestToken = tokenRange.begin;
-	    }
-	}
-      if (best == std::istreambuf_iterator<char>{})
-	{
-	  // TODO: no token matched
-	  std::cerr << "No token match found." << std::endl;
-	  return ;
-	}
-      std::cout << "Token id : " << bestToken->second << std::endl;
-      start = best;
+      for (; !isEndOfLine(*begin); ++begin)
+	line += *begin;
+      processLine(line.begin(), line.end());
+      for (; isEndOfLine(*begin); ++begin);
     }
-    
 }

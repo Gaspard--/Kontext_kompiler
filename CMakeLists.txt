@@ -8,8 +8,10 @@ set(SOURCE_DIRECTORY "source")
 if (WIN32)
   set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}")
 else()
-  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wfloat-conversion -g3 -std=c++14")
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wfloat-conversion -g3 -O3 -std=c++14")
 endif(WIN32)
+
+message("Falgs used: '${CMAKE_CXX_FLAGS}'")
 
 
 file(GLOB_RECURSE SOURCES_FILE "${SOURCE_DIRECTORY}/*.cpp")
