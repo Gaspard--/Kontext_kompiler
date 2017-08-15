@@ -1,0 +1,37 @@
+# Roadmap
+
+- [ ] Spec
+  - [ ] Syntax
+    - [ ] Symbol Types
+      - [x] Prefix
+        - [x] Prefix OP
+          - [x] normal prefix OP
+          - [x] name-prefix OP
+        - [x] Value
+          - [x] normal value
+          - [ ] meta value
+        - [ ] Suffix
+          - [x] normal suffix
+          - [ ] name suffix
+  - [ ] Builtin values and types
+    - [x] `__default_kontext_definitons__`
+    - [x] `{` and `}` (Scopes)
+  - [ ] Type sytem
+    - [ ] Value type sytem
+      - [ ] Value type declaration
+      - [ ] Value constraints
+      - [ ] Builtin Value types
+        - [ ] names
+        - [ ] strings
+    - [ ] Operator type sytem
+      - [ ] Operator declaration
+      - [ ] Builtin operators
+- [ ] Kompiler
+  - [x] basic syntax parsing
+  - [ ] name lookup
+  - [ ] builtin types and values
+    - [ ] `__default_kontext_definitons__`
+    - [ ] `{` and `}`
+    - [ ] names
+    - [ ] strings
+  - [ ] name handling
