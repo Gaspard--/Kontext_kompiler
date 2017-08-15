@@ -110,8 +110,8 @@ prefix n:
 suffix :
 prefix n?
 suffix ?
-suffix =, += ...
 prefix n=, n+= ...
+suffix =, += ...
 suffix ","
 prefix "n,"
 suffix ), ]
