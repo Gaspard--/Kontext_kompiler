@@ -21,8 +21,10 @@ public:
     size_t offset;
     size_t id;
   public:
+    Handle(int blob);
+    
     constexpr Handle(size_t offset, size_t id)
-      : offset(offset), id(id)
+    : offset(offset), id(id)
     {}
   };
 
@@ -36,6 +38,18 @@ public:
     {
       return stack[*this];
     }
+
+    Handle &operator++()
+    {
+      offset += sizeof(T);
+      id += 1;
+      return *this;
+    }
+
+    Handle operator++(int)
+    {
+      return Handle(offset + sizeof(T), id + 1);
+    }
   };
 
   template<class Cons, class Dest>
@@ -44,7 +58,7 @@ public:
     size_t	offset(data.size());
 
     cons();
-    destructors.emplace_back([&dest](Stack &stack)
+    destructors.emplace_back([&dest](Stack &)
 			     {
 			       dest();
 			     });

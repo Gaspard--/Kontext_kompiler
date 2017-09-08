@@ -85,4 +85,14 @@ public:
   {
     return tokenMap.emplace(key, std::forward<PARAMS>(params)...);
   }
+
+  template<class T>
+  auto const & operator[](T const &t)
+  {
+    try {
+      return tokenMap.at(t);
+    } catch (std::out_of_range const &) {
+      throw;
+    }
+  }
 };

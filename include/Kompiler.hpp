@@ -11,6 +11,7 @@
 
 class Kompiler
 {
+private:
   enum class TokenType
     {
       CONSTANT,
@@ -24,10 +25,9 @@ class Kompiler
     TokenType type;
   };
 
-private:
   Stack stack;
-  Lookup<std::unique_ptr<Prefix>> prefixes;
-  Lookup<std::unique_ptr<Prefix>> suffixes;
+  Lookup<Variable> prefixes;
+  Lookup<Operator> suffixes;
 
 public:
   Kompiler() = default;
@@ -35,34 +35,41 @@ public:
 
   auto interpretConstant(std::string const &str)
   {
-    std::unique_ptr<IntValue> result(new IntValue{0u});
+    CompilerValue<int> result(0u);
 
     for (char const c : str)
       {
 	if ((unsigned)c - '0' >= '9')
 	  throw std::runtime_error("Non numeric character in numeric constant (Not supported yet).\n");
-	result->value *= 10u;
-	result->value += (unsigned)c - '0';
+	*result *= 10u;
+	*result += (unsigned)c - '0';
       }
     return result;
   }
 
-  std::unique_ptr<Prefix> evaluatePrefixVariable(Token const &token)
+  Variable evaluatePrefixVariable(Token const &token)
   {
     switch (token.type)
       {
       case TokenType::CONSTANT:
 	return (interpretConstant(token.content));
       default:
- 	throw std::runtime_error("TODO: handle name lookup :/");
+	try {
+	  return prefixes[token.content];
+	} catch (std::out_of_range const &) {
+	  return {nullptr};
+	}
       }
   }
 
   // TODO
-  std::unique_ptr<Suffix> lookupSuffix(Token const &token)
+  auto lookupSuffix(Token const &token)
   {
-    return {nullptr};
-    //    throw std::runtime_error("No suffix found for '" + token.content + "'.")
+    try {
+      return suffixes[token.content];
+    } catch (std::out_of_range const &) {
+      return {nullptr};
+    }
   }
 
   template<class IT>
@@ -83,8 +90,6 @@ public:
 	  do {
 	    auto suffix(lookupSuffix(*begin));
 
-	    if (suffix)
-	      ++begin;
 	    if (!prefixOpStack.empty() && (!suffix || *prefixOpStack.top() > *suffix))
 	      {
 		prefixOpStack.top()->apply(*value).release()->store(value, prefixOpStack);
@@ -93,6 +98,7 @@ public:
 	    else if (suffix)
 	      {
 		suffix->apply(*value).release()->store(value, prefixOpStack);
+		++begin;
 	      }
 	    else if (begin == end)
 	      return value;

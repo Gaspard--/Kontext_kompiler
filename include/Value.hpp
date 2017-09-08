@@ -2,108 +2,90 @@
 
 #include <stack>
 #include <memory>
-
-/**
- * Prefix context: VALUE, PREFIX
- * Suffix context: SUFFIX
- * After VALUE: suffix context
- * After PREFIX: prefix context
- */
-enum class ValueType
-  {
-    PREFIX,
-    VALUE,
-    SUFFIX,
-  };
+#include <string>
 
 class Variable
 {
 public:
-  Variable() = default;
-  Variable(Variable const &) = delete;
-  virtual ~Variable() = default;
-};
+  uint64_t typeId;
 
-class Value;
-class PrefixOp;
-
-/**
- * Can only appear in prefix context
- */
-class Prefix : public Variable
-{
-public:
-  constexpr Prefix() = default;
-  virtual ~Prefix() = default;
-
-  virtual void store(std::unique_ptr<Value> &value, std::stack<std::unique_ptr<PrefixOp>> &prefixOpStack) = 0;
-  // virtual std::unique_ptr<Prefix> processNext(Kompiler const &kompiler, Token const &next) const = 0;
-  // virtual std::unique_ptr<Prefix> processNext(Kompiler const &kompiler, Token const &next, Token const &lookAhead) const = 0;
-};
-
-class Value : public Prefix
-{
-public:
-  uint64_t valueId;
-
-  constexpr Value(uint64_t valueId)
-  : valueId(valueId)
-  {
-  }
-
-  virtual ~Value() = default;
-
-  virtual void store(std::unique_ptr<Value> &value, std::stack<std::unique_ptr<PrefixOp>> &prefixOpStack) override;
-};
-
-class PrefixOp : public Prefix
-{
-public:
-  uint64_t prefixId;
-
-  constexpr PrefixOp(uint64_t prefixId)
-  : prefixId(prefixId)
-  {
-  }
-
-  virtual ~PrefixOp() = default;
-
-  virtual void store(std::unique_ptr<Value> &value, std::stack<std::unique_ptr<PrefixOp>> &prefixOpStack) override;
-  virtual std::unique_ptr<Prefix> apply(Value const &value);
-};
-
-/**
- * Can only appear in suffix context
- */
-class Suffix : public Variable
-{
-public:
-  uint64_t suffixId;
-
-  virtual ~Suffix() = default;
-  virtual std::unique_ptr<Prefix> apply(Value const &value);
-};
-
-class IntValue : public Value
-{
-public:
-  int value;
-
-  IntValue(int value)
-    : Value(0u)
-    , value(value)
+  constexpr Variable()
+  : typeId(0u)
   {}
+
+  constexpr Variable(uint64_t typeId)
+  : typeId(typeId)
+  {}
+
+  constexpr Variable(Variable const &) = default;
+
+  ~Variable() = default;
 };
 
-bool operator>(Prefix const &prefix, Suffix const &suffix);
-bool operator<(Prefix const &prefix, Suffix const &suffix);
-
-constexpr bool operator==(Prefix const &, Suffix const &)
+class Value : public Variable
 {
-  return false;
-}
+public:
+  constexpr Value() = default;
+  constexpr Value(Value const &) = default;
+  ~Value() = default;
+};
 
-constexpr bool operator!=(Prefix const &, Suffix const &)
+template<class T>
+class CompilerValue : public Value
 {
-  return true;
-}
+public:
+  T data;
+
+  CompilerValue<T>(T const &t)
+    : data(t)
+  {
+  }
+
+  T &operator*()
+  {
+    return data;
+  }
+
+  T const &operator*() const
+  {
+    return data;
+  }
+
+  T *operator->()
+  {
+    return &data;
+  }
+
+  T const *operator->() const
+  {
+    return &data;
+  }
+};
+
+class Type
+{
+  
+};
+
+class Class : public Type
+{
+  
+};
+
+template<class T>
+class CompilerType : public Class
+{
+};
+
+class Pointer : public Class
+{
+  // ???
+};
+
+class Operator : public Type
+{
+public:
+  constexpr Operator() = default;
+  constexpr Operator(Operator const &) = default;
+  ~Operator() = default;
+};
