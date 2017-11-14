@@ -27,7 +27,7 @@
       - [ ] Operator declaration
       - [ ] Builtin operators
 - [ ] Kompiler
-  - [x] basic syntax parsing
+  - [ ] basic syntax parsing
   - [ ] name lookup
   - [ ] builtin types and values
     - [ ] `__default_kontext_definitons__`

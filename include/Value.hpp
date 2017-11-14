@@ -3,89 +3,74 @@
 #include <stack>
 #include <memory>
 #include <string>
+#include <string_view>
+#include <map>
+#include <variant>
+#include <functional>
 
-class Variable
+struct Value;
+struct Function;
+
+using TypeDefinition = std::variant<std::map<std::string, uint64_t>, uint64_t>;
+// using TypeDefinition = std::variant<std::map<std::string, uint64_t>, Function, uint64_t>;
+using TypeList = std::unordered_map<uint64_t, TypeDefinition>;
+using FunctionList = std::unordered_map<uint64_t, Function>;
+
+struct FunctionOrTypeIndex
 {
-public:
-  uint64_t typeId;
-
-  constexpr Variable()
-  : typeId(0u)
-  {}
-
-  constexpr Variable(uint64_t typeId)
-  : typeId(typeId)
-  {}
-
-  constexpr Variable(Variable const &) = default;
-
-  ~Variable() = default;
+  bool isFunction;
+  uint64_t id;
 };
 
-class Value : public Variable
+struct Function
 {
-public:
-  constexpr Value() = default;
-  constexpr Value(Value const &) = default;
-  ~Value() = default;
-};
+  using FunctionPtr = Value(TypeList const &, Value const &stored, Value const &param);
 
-template<class T>
-class CompilerValue : public Value
-{
-public:
-  T data;
+  uint64_t storedValueType;
+  uint64_t paramType;
+  uint64_t returnType;
+  bool returnsPrefix;
+  double priority;
 
-  CompilerValue<T>(T const &t)
-    : data(t)
+  // TypeList is necessary to be able to disambiguate type.
+  FunctionPtr data;
+
+  bool operator>(Function const &other) const
   {
-  }
-
-  T &operator*()
-  {
-    return data;
-  }
-
-  T const &operator*() const
-  {
-    return data;
-  }
-
-  T *operator->()
-  {
-    return &data;
-  }
-
-  T const *operator->() const
-  {
-    return &data;
+    return priority > other.priority;
   }
 };
 
-class Type
+#define KOMPILER_PRIMITIVE_LIST			\
+  signed char, unsigned char,			\
+    signed short, unsigned short,		\
+    signed int, unsigned int,			\
+    signed long int, unsigned long int,		\
+    float, double, bool,			\
+    std::shared_ptr<TypeDefinition>,		\
+    std::shared_ptr<Function>			\
+
+using Primitive = std::variant<KOMPILER_PRIMITIVE_LIST>;
+
+struct Value
 {
-  
+  uint64_t type;
+  /// TODO: replace with something more optimal
+  std::vector<Primitive> flatFields; // can be empty
 };
 
-class Class : public Type
+inline bool operator>=(TypeDefinition const &container, TypeDefinition const &contained)
 {
-  
-};
-
-template<class T>
-class CompilerType : public Class
-{
-};
-
-class Pointer : public Class
-{
-  // ???
-};
-
-class Operator : public Type
-{
-public:
-  constexpr Operator() = default;
-  constexpr Operator(Operator const &) = default;
-  ~Operator() = default;
-};
+  return std::visit([](auto const &container, auto const &contained)
+		    {
+		      if constexpr (std::is_same_v<decltype(container), decltype(contained)>) {
+			  if constexpr (std::is_same_v<decltype(container), uint64_t const &>) {
+			      return container == contained;
+			    }
+			  else
+			    return std::includes(container.begin(), container.end(),
+						 contained.begin(), contained.end());
+			}
+		      return false;
+		    }, container, contained);
+}

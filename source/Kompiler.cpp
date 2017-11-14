@@ -18,7 +18,7 @@ void Kompiler::process(std::istream &stream)
 
       for (; !isEndOfLine(*begin); ++begin)
 	line += *begin;
-      processLine(line.begin(), line.end());
+      processLine(line);
       for (; isEndOfLine(*begin); ++begin);
     }
 }

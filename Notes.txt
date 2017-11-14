@@ -44,7 +44,10 @@ When a value is found or computed, the next symbol is looked up as a suffix:
 - Otherwise if no symbol is left in the expression:
  -> The value is returned.
 - Otherwise:
- -> A syntax error is raised.
+ -> The expression is retried with the next possible type at the rightmost position for which other type possibillities remain, if this fails, a syntax error is raised.
+
+(c kompiler notes)
+A suffix can be converted to a prefix without loss of information except precedence conflicts.
 
 4) Operator overloading
 

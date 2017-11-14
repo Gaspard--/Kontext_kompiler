@@ -24,7 +24,6 @@ int main(int ac, char **argv)
 		    << "Invalid file " << file << "." << std::endl;
 	  return (1);
 	}
-
       kompiler.process(stream);
     }
   else
