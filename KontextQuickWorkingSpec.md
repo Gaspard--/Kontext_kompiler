@@ -67,7 +67,7 @@ A unary can specify several types and property combinations it can accept.
 Overload resolution occurs when a `unary` is applied. If several are competing (unary suffix and prefix) both of the `unary`'s possiblillities are taken into account.
 If an overload fits except for a certain amount of properties, the cost of pormoting to these properties dertimins the cost of the overload, the cheapest overload is then chosen.
 
-#// BELOW IS OLD STUFF, READ AT YOUR OWN RISK //
+# // BELOW IS OLD STUFF, READ AT YOUR OWN RISK //
 4) Operator overloading
 
 When defining an operator, it's parameter type will determine which variables will be able go be passed to it.
