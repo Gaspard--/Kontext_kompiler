@@ -2,108 +2,75 @@
 
 #include <stack>
 #include <memory>
+#include <string>
+#include <string_view>
+#include <map>
+#include <variant>
+#include <functional>
 
-/**
- * Prefix context: VALUE, PREFIX
- * Suffix context: SUFFIX
- * After VALUE: suffix context
- * After PREFIX: prefix context
- */
-enum class ValueType
-  {
-    PREFIX,
-    VALUE,
-    SUFFIX,
-  };
+struct Value;
+struct Function;
 
-class Variable
+using TypeDefinition = std::variant<std::map<std::string, uint64_t>, uint64_t>;
+// using TypeDefinition = std::variant<std::map<std::string, uint64_t>, Function, uint64_t>;
+using TypeList = std::unordered_map<uint64_t, TypeDefinition>;
+using FunctionList = std::unordered_map<uint64_t, Function>;
+
+struct FunctionOrTypeIndex
 {
-public:
-  Variable() = default;
-  Variable(Variable const &) = delete;
-  virtual ~Variable() = default;
+  bool isFunction;
+  uint64_t id;
 };
 
-class Value;
-class PrefixOp;
-
-/**
- * Can only appear in prefix context
- */
-class Prefix : public Variable
+struct Function
 {
-public:
-  constexpr Prefix() = default;
-  virtual ~Prefix() = default;
+  using FunctionPtr = Value(TypeList const &, Value const &stored, Value const &param);
 
-  virtual void store(std::unique_ptr<Value> &value, std::stack<std::unique_ptr<PrefixOp>> &prefixOpStack) = 0;
-  // virtual std::unique_ptr<Prefix> processNext(Kompiler const &kompiler, Token const &next) const = 0;
-  // virtual std::unique_ptr<Prefix> processNext(Kompiler const &kompiler, Token const &next, Token const &lookAhead) const = 0;
-};
+  uint64_t storedValueType;
+  uint64_t paramType;
+  uint64_t returnType;
+  bool returnsPrefix;
+  double priority;
 
-class Value : public Prefix
-{
-public:
-  uint64_t valueId;
+  // TypeList is necessary to be able to disambiguate type.
+  FunctionPtr data;
 
-  constexpr Value(uint64_t valueId)
-  : valueId(valueId)
+  bool operator>(Function const &other) const
   {
+    return priority > other.priority;
   }
-
-  virtual ~Value() = default;
-
-  virtual void store(std::unique_ptr<Value> &value, std::stack<std::unique_ptr<PrefixOp>> &prefixOpStack) override;
 };
 
-class PrefixOp : public Prefix
+#define KOMPILER_PRIMITIVE_LIST			\
+  signed char, unsigned char,			\
+    signed short, unsigned short,		\
+    signed int, unsigned int,			\
+    signed long int, unsigned long int,		\
+    float, double, bool,			\
+    std::shared_ptr<TypeDefinition>,		\
+    std::shared_ptr<Function>			\
+
+using Primitive = std::variant<KOMPILER_PRIMITIVE_LIST>;
+
+struct Value
 {
-public:
-  uint64_t prefixId;
-
-  constexpr PrefixOp(uint64_t prefixId)
-  : prefixId(prefixId)
-  {
-  }
-
-  virtual ~PrefixOp() = default;
-
-  virtual void store(std::unique_ptr<Value> &value, std::stack<std::unique_ptr<PrefixOp>> &prefixOpStack) override;
-  virtual std::unique_ptr<Prefix> apply(Value const &value);
+  uint64_t type;
+  /// TODO: replace with something more optimal
+  std::vector<Primitive> flatFields; // can be empty
 };
 
-/**
- * Can only appear in suffix context
- */
-class Suffix : public Variable
+inline bool operator>=(TypeDefinition const &container, TypeDefinition const &contained)
 {
-public:
-  uint64_t suffixId;
-
-  virtual ~Suffix() = default;
-  virtual std::unique_ptr<Prefix> apply(Value const &value);
-};
-
-class IntValue : public Value
-{
-public:
-  int value;
-
-  IntValue(int value)
-    : Value(0u)
-    , value(value)
-  {}
-};
-
-bool operator>(Prefix const &prefix, Suffix const &suffix);
-bool operator<(Prefix const &prefix, Suffix const &suffix);
-
-constexpr bool operator==(Prefix const &, Suffix const &)
-{
-  return false;
-}
-
-constexpr bool operator!=(Prefix const &, Suffix const &)
-{
-  return true;
+  return std::visit([](auto const &container, auto const &contained)
+		    {
+		      if constexpr (std::is_same_v<decltype(container), decltype(contained)>) {
+			  if constexpr (std::is_same_v<decltype(container), uint64_t const &>) {
+			      return container == contained;
+			    }
+			  else
+			    return std::includes(container.begin(), container.end(),
+						 contained.begin(), contained.end());
+			}
+		      return false;
+		    }, container, contained);
 }
