@@ -75,7 +75,7 @@ Ex:
 
 A type is the underlying data, the reality.
 
-A property is an aditional tag that can be obtained by a variable through [promotion](#b-Promotion) .
+A property is an aditional tag that can be obtained by a variable through [promotion](#b-promotion).
 
 ### b) Promotion
 
