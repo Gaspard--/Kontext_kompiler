@@ -73,9 +73,13 @@ Ex:
 
 ### a) Brief exposition
 
-A type is the underlying data, the reality.
+A prmitive is a builtin compiler type.
+
+A struct is the underlying data, it's an agregation of primitives andbo structs.
 
 A property is an aditional tag that can be obtained by a variable through [promotion](#b-promotion).
+
+A type is a struct or primitive with a list of properties.
 
 ### b) Promotion
 
@@ -89,6 +93,6 @@ If mutliple "paths" to promotion are possible, the cheapest one is taken into ac
 
 A unary can specify several types and property combinations it can accept.
 
-Overload resolution occurs when a `unary` is applied. If several are competing (unary suffix and prefix) both of the `unary`'s possiblillities are taken into account.
+Overload resolution occurs when a `unary` is applied. If several are competing (unary prefix and postfix) both of the `unary`'s possiblillities are taken into account.
 
 If an overload fits except for a certain amount of properties, the cost of pormoting to these properties dertimins the cost of the overload, the cheapest overload is then chosen.
