@@ -51,6 +51,15 @@ public:
     throw std::runtime_error("No value found in expression!");
   }
 
+  static UnaryFunction &getUnaryFunction(std::string_view str, std::unordered_map<std::string, UnaryFunction> &unaryFunctions)
+  {
+    try {
+      return unaryFunctions.at(std::string(str));
+    } catch (std::out_of_range const &) {
+      return unapplyable;
+    }
+  }
+
   // Contract:
   // - only values between `begin` and `it` will be accessed.
   // - both will be incremented, add_assigned, or assigned to greater values
@@ -73,11 +82,12 @@ public:
     else
       prefixIt = begin;
     
-    // UnaryFunction *unaryPrefix((prefixIt <= begin) ? nullptr : getUnaryPreffix((--prefixIt)->content));
-    // UnaryFunction *unaryPostfix((it == end) ? nullptr : getUnaryPostfix(it->content));
+    UnaryFunction &unaryPrefix((prefixIt <= begin) ? unapplyable : getUnaryFunction(it->content, prefixes));
+    UnaryFunction &unaryPostfix((it == end) ? unapplyable : getUnaryFunction(it->content, postfixes));
+
     // auto evaluateCandidateWorth([](auto &typeAndFunc){
     // 	auto &type(typeAndFunc.first.paramType);
-
+    
     //   });
 
     // do {

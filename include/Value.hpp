@@ -59,3 +59,5 @@ struct UnaryOperator
   StructDefinition storedValueType;
   std::vector<UnaryFunction> data;
 };
+
+inline  UnaryFunction unapplyable{};
