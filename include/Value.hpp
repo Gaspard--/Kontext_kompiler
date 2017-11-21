@@ -7,7 +7,7 @@
 #include <map>
 #include <variant>
 #include <functional>
-// #include "Properties.hpp"
+#include "Properties.hpp"
 
 struct UnaryFunction;
 
@@ -23,7 +23,7 @@ using Primitive = std::variant<KOMPILER_PRIMITIVE_LIST>;
 using Value = std::vector<Primitive>;
 
 
-using PrimitiveId = unsigned long int; // TODO: possibly use an enum?
+using PrimitiveId = unsigned long int;
 
 struct StructDefinition : public std::map<std::string, std::variant<StructDefinition, PrimitiveId>>
 {
@@ -32,11 +32,22 @@ struct StructDefinition : public std::map<std::string, std::variant<StructDefini
 
 using DataType = std::variant<StructDefinition, PrimitiveId>;
 
-
-class Type
+struct Type
 {
   DataType dataType;
-  // PropertyList::Properties properties;
+  PropertyList::Properties properties;
+};
+
+struct UnaryOperator
+{
+  std::vector<UnaryFunction> data;
+
+  static UnaryOperator const &getUnapplyable()
+  {
+    static UnaryOperator unapplyable{};
+
+    return unapplyable;
+  }
 };
 
 struct UnaryFunction
@@ -46,18 +57,9 @@ struct UnaryFunction
   struct FuncSignature
   {
     Type paramType;
-    Type returnType;
-    bool returnsPrefix;
+    std::variant<Type, UnaryOperator> returnType;
   };
 
   FuncSignature signature;
-  FunctionPtr func;
+  FunctionPtr *func;
 };
-
-struct UnaryOperator
-{
-  StructDefinition storedValueType;
-  std::vector<UnaryFunction> data;
-};
-
-inline  UnaryFunction unapplyable{};
