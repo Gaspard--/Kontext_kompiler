@@ -7,70 +7,55 @@
 #include <map>
 #include <variant>
 #include <functional>
+// #include "Properties.hpp"
 
-struct Value;
-struct Function;
-
-using TypeDefinition = std::variant<std::map<std::string, uint64_t>, uint64_t>;
-// using TypeDefinition = std::variant<std::map<std::string, uint64_t>, Function, uint64_t>;
-using TypeList = std::unordered_map<uint64_t, TypeDefinition>;
-using FunctionList = std::unordered_map<uint64_t, Function>;
-
-struct FunctionOrTypeIndex
-{
-  bool isFunction;
-  uint64_t id;
-};
-
-struct Function
-{
-  using FunctionPtr = Value(TypeList const &, Value const &stored, Value const &param);
-
-  uint64_t storedValueType;
-  uint64_t paramType;
-  uint64_t returnType;
-  bool returnsPrefix;
-  double priority;
-
-  // TypeList is necessary to be able to disambiguate type.
-  FunctionPtr data;
-
-  bool operator>(Function const &other) const
-  {
-    return priority > other.priority;
-  }
-};
+struct UnaryFunction;
 
 #define KOMPILER_PRIMITIVE_LIST			\
-  signed char, unsigned char,			\
-    signed short, unsigned short,		\
-    signed int, unsigned int,			\
-    signed long int, unsigned long int,		\
-    float, double, bool,			\
-    std::shared_ptr<TypeDefinition>,		\
-    std::shared_ptr<Function>			\
+  signed long int, unsigned long int, double	\
+
+// std::shared_ptr<TypeDefinition>,		
+// std::shared_ptr<UnaryFunction>      	
+
+// TODO: reflection
 
 using Primitive = std::variant<KOMPILER_PRIMITIVE_LIST>;
+using Value = std::vector<Primitive>;
 
-struct Value
+
+using PrimitiveId = unsigned long int; // TODO: possibly use an enum?
+
+struct StructDefinition : public std::map<std::string, std::variant<StructDefinition, PrimitiveId>>
 {
-  uint64_t type;
-  /// TODO: replace with something more optimal
-  std::vector<Primitive> flatFields; // can be empty
+  using std::map<std::string, std::variant<StructDefinition, PrimitiveId>>::map;
 };
 
-inline bool operator>=(TypeDefinition const &container, TypeDefinition const &contained)
+using DataType = std::variant<StructDefinition, PrimitiveId>;
+
+
+class Type
 {
-  return std::visit([](auto const &container, auto const &contained)
-		    {
-		      if constexpr (std::is_same_v<decltype(container), decltype(contained)>) {
-			  if constexpr (std::is_same_v<decltype(container), uint64_t const &>) {
-			      return container == contained;
-			    }
-			  else
-			    return std::includes(container.begin(), container.end(),
-						 contained.begin(), contained.end());
-			}
-		      return false;
-		    }, container, contained);
-}
+  DataType dataType;
+  // PropertyList::Properties properties;
+};
+
+struct UnaryFunction
+{
+  using FunctionPtr = Value(Value const &stored, Value const &param);
+
+  struct FuncSignature
+  {
+    Type paramType;
+    Type returnType;
+    bool returnsPrefix;
+  };
+
+  FuncSignature signature;
+  FunctionPtr func;
+};
+
+struct UnaryOperator
+{
+  StructDefinition storedValueType;
+  std::vector<UnaryFunction> data;
+};
