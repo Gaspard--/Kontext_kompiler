@@ -13,6 +13,7 @@ int main(int ac, char **argv)
     }
   Kompiler kompiler;
 
+  try {
   if (ac == 2)
     {
       std::string file(argv[1]);
@@ -28,4 +29,7 @@ int main(int ac, char **argv)
     }
   else
     kompiler.process(std::cin);
+  } catch (std::runtime_error const &e) {
+    std::cerr << e.what() << std::endl;
+  }
 }

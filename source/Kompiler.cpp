@@ -14,11 +14,11 @@ void Kompiler::process(std::istream &stream)
 
  while (begin != std::istreambuf_iterator<char>{})
     {
-      std::string line;
+      std::string line{};
 
       for (; !isEndOfLine(*begin); ++begin)
 	line += *begin;
-      processLine(line);
+      parseLine(line);
       for (; isEndOfLine(*begin); ++begin);
     }
 }

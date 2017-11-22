@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <iostream>
+#include <list>
 
 #include "Stack.hpp"
 #include "Lookup.hpp"
@@ -15,7 +16,7 @@
 
 class Kompiler
 {
-private:
+public:
   enum class TokenType
     {
       CONSTANT,
@@ -29,9 +30,11 @@ private:
     TokenType type;
   };
 
+private:
+
   Stack stack;
   std::unordered_map<std::string, UnaryOperator> prefixes;
-  std::unordered_map<std::string, std::pair<Value, Type>> values;
+  std::unordered_map<std::string_view, std::pair<Value, Type>> values;
   std::unordered_map<std::string, UnaryOperator> postfixes;
   PropertyList propertyList;
 
@@ -41,11 +44,12 @@ public:
   
 
   // Find a value within an expression
-  template<class DestructiveIT, class ConstrutiveIT, class EndIT>
-  std::pair<Value, Type> const &getValue(DestructiveIT &begin, ConstrutiveIT &it, EndIT const &end)
+  template<class ConstrutiveIT, class EndIT>
+  std::pair<Value, Type> const &getValue(ConstrutiveIT &it, EndIT const &end)
   {
     while (it != end) {
-      auto valueIt(values.find(std::string(it->content)));
+      std::cout << "Looking up value: " << it->content << std::endl;
+      auto valueIt(values.find(it->content));
 
       if (valueIt != values.end())
 	return valueIt->second;
@@ -73,26 +77,26 @@ public:
 
   // Contract:
   // - only values between `begin` and `it` will be accessed.
-  // - both will be incremented, add_assigned, or assigned to greater values
+  // - both will only be incremented or assigned to greater values
   // - both won't be incremented further than `end`
   // - copies of `it` may be decremented and will always be between `begin` and `it`, and should not construct or destruct elements
   // - all threee iterators have to be comparable.
   // - ConstructiveIt and DestructiveIt shall not be copied
-  template<class DestructiveIT, class ConstrutiveIT, class EndIT, class NormalItCaster>
-  std::pair<Value, Type> evaluateTokens(DestructiveIT &begin, ConstrutiveIT &it, EndIT const &end, NormalItCaster const &getNormalIt, UnaryOperator const &prevPrefix = UnaryOperator::getUnapplyable(), Value const &prevStored = {})
+  template<class DestructiveIT, class ConstrutiveIT, class EndIT>
+  std::pair<Value, Type> evaluateTokens(DestructiveIT &begin, ConstrutiveIT &it, EndIT const &end, UnaryOperator const &prevPrefix = UnaryOperator::getUnapplyable(), Value const &prevStored = {})
   {
-    if (begin == end)
+    if (it == end)
       throw std::runtime_error("Can't evaluate nothing yet :/");
-    auto prevPrefixBegin(begin);
-    auto value(getValue(begin, it, end));
-    auto prefixIt((it >= begin + 1) ?
-		  getNormalIt(it - 1) :
-		  getNormalIt(end));
+    auto value(getValue(it, end));
+    std::optional<decltype(it.copy()--)> prefixIt;
 
+    if (it != begin)
+      --*(prefixIt = it.copy());
+    
     ++it;
-    while (prefixIt != end && it != end)
+    while (prefixIt && it != end)
       {
-	UnaryOperator const &unaryPrefix((prefixIt == end) ? prevPrefix : getUnaryOperator(prefixIt->content, prefixes));
+	UnaryOperator const &unaryPrefix(prefixIt ? prevPrefix : getUnaryOperator((*prefixIt)->content, prefixes));
 	UnaryOperator const &unaryPostfix((it == end) ? UnaryOperator::getUnapplyable() : getUnaryOperator(it->content, postfixes));
 
 	bool which(0u);
@@ -120,7 +124,7 @@ public:
 		which = 1;
 	      }
 	  }
-	value = std::visit([this, &value, bestFunc, prevStored, getNormalIt, &it, end](auto const &returnType)
+	value = std::visit([this, &value, bestFunc, prevStored, &it, end](auto const &returnType)
 			   {
 			     using T = std::remove_cv_t<std::remove_reference_t<decltype(returnType)>>;
 			     constexpr bool isValue(std::is_same_v<T, Type>);
@@ -132,97 +136,36 @@ public:
 			       return std::pair<Value, Type>{bestFunc->func(prevStored, value.first), returnType};
 			     }
 			     else
-			     {
-			       auto itCopy(getNormalIt(it));
-			       return evaluateTokens(itCopy, it, end, getNormalIt, returnType, bestFunc->func(prevStored, value.first));
-			     }
+			       {
+				 auto itCopy(it.copy());
+				 return evaluateTokens(itCopy, it, end, returnType, bestFunc->func(prevStored, value.first));
+			       }
 			   }, bestFunc->signature.returnType);
 	if (!which)
 	  {
-	    if (prefixIt == begin)
+	    if (begin == *prefixIt)
 	      {
-		prefixIt = end;
-		begin = it;
+		prefixIt.reset();
+		begin = it.copy();
 	      }
-	    else if (prefixIt == end)
+	    else if (!prefixIt)
 	      return value; // there was a prefix to apply
 	    else
-	      --prefixIt;
+	      --*prefixIt;
 	  }
 	else
-	  ++it;
+	  {
+	    ++it;
+	    if (!prefixIt)
+	      ++begin;
+	  }
       }
+    return value;
   }
+
+  void parseLine(std::string_view str);
   
-  template<class IT>
-  void processTokens(IT begin, IT end)
-  {
-    IT beginCopy(begin);
-    for (auto it(begin); it != end; ++it)
-      std::cout << it->content << " : " << (size_t)it->type << std::endl;
-    evaluateTokens(begin, beginCopy, end, [](auto const &a)
-		   {
-		     return static_cast<std::remove_cv_t<std::remove_reference_t<decltype(a)>>>(a);
-		   });
-  }
-
-  // TODO: make process more lazy
-  void processLine(std::string_view line)
-  {
-    auto isDigit([](char c)
-		 {
-		   return (((unsigned)c - '0') <= '9' - '0');
-		 });
-    auto isName([](char c)
-		{
-		  return ((((unsigned)c - 'A') <= 'Z' - 'A')
-			  || (((unsigned)c - 'a') <= 'z' - 'a')
-			  || c == '_');
-		});
-    auto isWhiteSpace([](char c)
-		      {
-			return c == ' ' || c == '\t' || c == '\n';
-		      });
-    std::vector<Token> tokens;
-    auto begin(line.begin());
-    auto end(line.end());
-    
-    for (;begin != end && isWhiteSpace(*begin); ++begin);
-    if (begin == end)
-      {
-	std::cout << "line empty" << std::endl;
-	return ;
-      }
-    while (begin != end)
-      {
-	if (isDigit(*begin))
-	  {
-	    auto it(begin);
-
-	    for (; it != end && (isDigit(*it) || isName(*it)); ++it);
-	    tokens.push_back({std::string(begin, it), TokenType::CONSTANT});
-	    begin = it;
-	  }
-	else if (isName(*begin))
-	  {
-	    auto it(begin);
-
-	    for (; it != end && (isDigit(*it) || isName(*it)); ++it);
-	    tokens.push_back({std::string(begin, it), TokenType::NAME});
-	    begin = it;
-	  }
-	else
-	  {
-	    auto it(begin);
-
-	    for (; it != end && !isDigit(*it) && !isName(*it) && !isWhiteSpace(*it); ++it);
-	    tokens.push_back({std::string(begin, it), TokenType::OPERATOR});
-	    begin = it;
-	  }
-	for (; begin != end && isWhiteSpace(*begin); ++begin);
-      }
-    return processTokens(tokens.begin(), tokens.end());
-  }
-
   void process(std::istream &);
 };
+
+#include "Lexer.hpp"
