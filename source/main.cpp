@@ -14,22 +14,23 @@ int main(int ac, char **argv)
   Kompiler kompiler;
 
   try {
-  if (ac == 2)
-    {
-      std::string file(argv[1]);
-      std::ifstream stream(file);
+    if (ac == 2)
+      {
+	std::string file(argv[1]);
+	std::ifstream stream(file);
 
-      if (!stream)
-	{
-	  std::cerr << "usage: " << argv[0] << " mainFile" << std::endl
-		    << "Invalid file " << file << "." << std::endl;
-	  return (1);
-	}
-      kompiler.process(stream);
-    }
-  else
-    kompiler.process(std::cin);
+	if (!stream)
+	  {
+	    std::cerr << "usage: " << argv[0] << " mainFile" << std::endl
+		      << "Invalid file " << file << "." << std::endl;
+	    return (1);
+	  }
+	kompiler.process(stream);
+      }
+    else
+      kompiler.process(std::cin);
   } catch (std::runtime_error const &e) {
     std::cerr << e.what() << std::endl;
+    return (1);
   }
 }

@@ -48,8 +48,8 @@ struct DestructiveIt
 struct ConstructiveIt
 {
   std::list<Kompiler::Token> &tokens; // TODO: replace with something better (needs to not invalidate iterators though.)
-  std::string_view::iterator begin;
-  std::string_view::iterator end;
+  std::string::const_iterator begin;
+  std::string::const_iterator end;
   bool endReached;
   
   ConstructiveIt &operator++()
@@ -64,7 +64,7 @@ struct ConstructiveIt
 	    auto it(begin);
 
 	    for (; it != end && (isDigit(*it) || isName(*it)); ++it);
-	    tokens.push_back({std::string_view(begin, it - begin), Kompiler::TokenType::CONSTANT});
+	    tokens.push_back({std::string(begin, it), Kompiler::TokenType::CONSTANT});
 	    begin = it;
 	  }
 	else if (isName(*begin))
@@ -72,7 +72,7 @@ struct ConstructiveIt
 	    auto it(begin);
 
 	    for (; it != end && (isDigit(*it) || isName(*it)); ++it);
-	    tokens.push_back({std::string_view(begin, it - begin), Kompiler::TokenType::NAME});
+	    tokens.push_back({std::string(begin, it), Kompiler::TokenType::NAME});
 	    begin = it;
 	  }
 	else
@@ -80,7 +80,7 @@ struct ConstructiveIt
 	    auto it(begin);
 
 	    for (; it != end && !isDigit(*it) && !isName(*it) && !isWhiteSpace(*it); ++it);
-	    tokens.push_back({std::string_view(begin, it - begin), Kompiler::TokenType::OPERATOR});
+	    tokens.push_back({std::string(begin, it), Kompiler::TokenType::OPERATOR});
 	    begin = it;
 	  }
 	std::cout << "Created new token: " << tokens.back().content << std::endl;
@@ -135,7 +135,7 @@ struct ConstructiveIt
   }
 };
 
-inline void Kompiler::parseLine(std::string_view str)
+inline void Kompiler::parseLine(std::string const &str)
 {
   std::cout << "Parsing: " << str << std::endl;
   std::list<Kompiler::Token> tokens{};

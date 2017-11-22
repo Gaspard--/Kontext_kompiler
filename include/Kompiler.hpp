@@ -26,7 +26,7 @@ public:
 
   struct Token
   {
-    std::string_view content;
+    std::string content;
     TokenType type;
   };
 
@@ -34,14 +34,13 @@ private:
 
   Stack stack;
   std::unordered_map<std::string, UnaryOperator> prefixes;
-  std::unordered_map<std::string_view, std::pair<Value, Type>> values;
+  std::unordered_map<std::string, std::pair<Value, Type>> values;
   std::unordered_map<std::string, UnaryOperator> postfixes;
   PropertyList propertyList;
 
 public:
   Kompiler() = default;
   ~Kompiler() = default;
-  
 
   // Find a value within an expression
   template<class ConstrutiveIT, class EndIT>
@@ -57,11 +56,11 @@ public:
     }
     throw std::runtime_error("No value found in expression!");
   }
-  
-  static UnaryOperator const &getUnaryOperator(std::string_view str, std::unordered_map<std::string, UnaryOperator> const &unaryOperators)
+
+  static UnaryOperator const &getUnaryOperator(std::string const &str, std::unordered_map<std::string, UnaryOperator> const &unaryOperators)
   {
     try {
-      return unaryOperators.at(std::string(str));
+      return unaryOperators.at(str);
     } catch (std::out_of_range const &) {
       return UnaryOperator::getUnapplyable();
     }
@@ -92,7 +91,6 @@ public:
 
     if (it != begin)
       --*(prefixIt = it.copy());
-    
     ++it;
     while (prefixIt && it != end)
       {
@@ -163,7 +161,7 @@ public:
     return value;
   }
 
-  void parseLine(std::string_view str);
+  void parseLine(std::string const &str);
   
   void process(std::istream &);
 };
