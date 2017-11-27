@@ -6,7 +6,10 @@
 class PropertyList
 {
 public:
-  using Properties = std::unordered_set<unsigned long int>;
+  using PropertyId = unsigned long int;
+  using Properties = std::unordered_set<PropertyId>;
+
+  static constexpr PropertyId inf = static_cast<PropertyId>(-1);
 
   struct PropertyInfo
   {
@@ -45,8 +48,11 @@ public:
 	possessed.insert(property);
 
 	PropertyInfo const &info(propertyInfos[property]);
+	long unsigned int reqCost(getCost(possessed, info.requirements));
 
-	cost += info.cost + getCost(possessed, info.requirements);
+	if (info.cost == inf || reqCost == inf)
+	  return inf;
+	cost += info.cost + reqCost;
       }
     return cost;
   }

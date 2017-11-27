@@ -60,11 +60,9 @@ public:
     }
   }
 
-  long unsigned int getTypeCastCost(Type const &source, Type const &dest)
+  long unsigned int getTypeCastCost(PropertyList::Properties source, PropertyList::Properties const &dest)
   {
-    auto possessed(source.properties);
-
-    return (propertyList.getCost(possessed, dest.properties));
+    return (propertyList.getCost(source, dest));
   }
 
   // Contract:
@@ -91,12 +89,12 @@ public:
 	UnaryOperator const &unaryPostfix((it == end) ? UnaryOperator::getUnapplyable() : getUnaryOperator(it->content, postfixes));
 
 	bool which(0u);
-	long unsigned int bestCost(~0u);
+	long unsigned int bestCost(PropertyList::inf);
 	UnaryFunction const *bestFunc(nullptr);
 
 	for (auto &func : unaryPrefix.data)
 	  {
-	    long unsigned int currentCost(getTypeCastCost(func.signature.paramType, value.second));
+	    long unsigned int currentCost(getTypeCastCost(func.signature.properties, value.second.properties));
 
 	    if (currentCost < bestCost)
 	      {
@@ -106,7 +104,7 @@ public:
 	  }
 	for (auto &func : unaryPostfix.data)
 	  {
-	    long unsigned int currentCost(getTypeCastCost(func.signature.paramType, value.second));
+	    long unsigned int currentCost(getTypeCastCost(func.signature.properties, value.second.properties));
 
 	    if (currentCost < bestCost)
 	      {
@@ -117,7 +115,9 @@ public:
 	  }
 	if (!bestFunc)
 	  throw std::runtime_error("No prefix or postfix to apply :(");
-	value = std::visit([this, &value, bestFunc, prevStored, &it, end](auto const &returnType)
+	std::pair<Value, std::variant<Type, UnaryOperator>> returnValueAndType{bestFunc->func(prevStored, value.first)};
+
+	value = std::visit([this, &value, bestFunc, prevStored, &it, end, &returnValueAndType](auto const &returnType)
 			   {
 			     using T = std::remove_cv_t<std::remove_reference_t<decltype(returnType)>>;
 			     constexpr bool isValue(std::is_same_v<T, Type>);
@@ -125,33 +125,33 @@ public:
 
 			     static_assert(isValue || isPrefix, "Unhandled type in " __FILE__  ": " STRINGIZE(__LINE__));
 			     if constexpr (isValue)
-			       return std::pair<Value, Type>{bestFunc->func(prevStored, value.first), returnType};
+ 			       return std::pair<Value, Type>{returnValueAndType.first, returnType};
 			     else
-			       {
-				 auto itCopy(it.copy());
+			     {
+			       auto itCopy(it.copy());
 
-				 return evaluateTokens(itCopy, it, end, returnType, bestFunc->func(prevStored, value.first));
-			       }
-			   }, bestFunc->signature.returnType);
-	if (!which)
+			       return evaluateTokens(itCopy, it, end, returnType, returnValueAndType.first);
+			     }
+			   }, returnValueAndType.second);
+    if (!which)
+      {
+	if (begin == *prefixIt)
 	  {
-	    if (begin == *prefixIt)
-	      {
-		prefixIt.reset();
-		begin = it.copy();
-	      }
-	    else if (prefixIt)
-	      --*prefixIt;
-	    else
-	      return value; // there was no prefix to apply
+	    prefixIt.reset();
+	    begin = it.copy();
 	  }
+	else if (prefixIt)
+	  --*prefixIt;
 	else
-	  {
-	    ++it;
-	    if (!prefixIt)
-	      ++begin;
-	  }
+	  return value; // there was no prefix to apply
       }
+    else
+      {
+	++it;
+	if (!prefixIt)
+	  ++begin;
+      }
+  }
     return value;
   }
 

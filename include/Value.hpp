@@ -59,12 +59,11 @@ struct UnaryOperator
 
 struct UnaryFunction
 {
-  using FunctionPtr = Value(Value const &stored, Value const &param);
+  using FunctionPtr = std::pair<Value, std::variant<Type, UnaryOperator>>(Value const &stored, Value const &param);
 
   struct FuncSignature
   {
-    Type paramType;
-    std::variant<Type, UnaryOperator> returnType;
+    PropertyList::Properties properties;
   };
 
   FuncSignature signature;
