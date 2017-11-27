@@ -13,7 +13,7 @@
 struct UnaryFunction;
 
 #define KOMPILER_PRIMITIVE_LIST						\
-  signed long int, unsigned long int, double,				\
+  unsigned long int, double,						\
     std::shared_ptr<Token>						\
 
 // std::shared_ptr<TypeDefinition>,
@@ -49,6 +49,11 @@ struct UnaryOperator
     static UnaryOperator unapplyable{};
 
     return unapplyable;
+  }
+
+  void addFunc(UnaryFunction const &func)
+  {
+    data.push_back(func);
   }
 };
 

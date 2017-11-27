@@ -67,7 +67,6 @@ public:
     return (propertyList.getCost(possessed, dest.properties));
   }
 
-
   // Contract:
   // - only values between `begin` and `it` will be accessed.
   // - both will only be incremented or assigned to greater values
@@ -81,7 +80,7 @@ public:
     if (it == end)
       throw std::runtime_error("Can't evaluate nothing yet :/");
     auto value(getValue(it, end));
-    std::optional<decltype(it.copy()--)> prefixIt;
+    std::optional<decltype(it.copy())> prefixIt;
 
     if (it != begin)
       --*(prefixIt = it.copy());
@@ -126,9 +125,7 @@ public:
 
 			     static_assert(isValue || isPrefix, "Unhandled type in " __FILE__  ": " STRINGIZE(__LINE__));
 			     if constexpr (isValue)
-			     {
 			       return std::pair<Value, Type>{bestFunc->func(prevStored, value.first), returnType};
-			     }
 			     else
 			       {
 				 auto itCopy(it.copy());
@@ -143,10 +140,10 @@ public:
 		prefixIt.reset();
 		begin = it.copy();
 	      }
-	    else if (!prefixIt)
-	      return value; // there was a prefix to apply
-	    else
+	    else if (prefixIt)
 	      --*prefixIt;
+	    else
+	      return value; // there was no prefix to apply
 	  }
 	else
 	  {
