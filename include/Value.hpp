@@ -8,14 +8,16 @@
 #include <variant>
 #include <functional>
 #include "Properties.hpp"
+#include "Token.hpp"
 
 struct UnaryFunction;
 
-#define KOMPILER_PRIMITIVE_LIST			\
-  signed long int, unsigned long int, double	\
+#define KOMPILER_PRIMITIVE_LIST						\
+  signed long int, unsigned long int, double,				\
+    std::shared_ptr<Token>						\
 
-// std::shared_ptr<TypeDefinition>,		
-// std::shared_ptr<UnaryFunction>      	
+// std::shared_ptr<TypeDefinition>,
+// std::shared_ptr<UnaryFunction>
 
 // TODO: reflection
 
@@ -63,3 +65,11 @@ struct UnaryFunction
   FuncSignature signature;
   FunctionPtr *func;
 };
+
+template<class T>
+std::pair<Value, Type> makePrimitiveValueAndType(T &&first)
+{
+  Primitive primitive(first);
+
+  return std::pair<Value, Type>{Value{primitive}, Type{static_cast<PrimitiveId>(primitive.index()), {}}};
+}

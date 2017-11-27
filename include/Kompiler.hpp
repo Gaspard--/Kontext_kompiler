@@ -17,18 +17,6 @@
 class Kompiler
 {
 public:
-  enum class TokenType
-    {
-      CONSTANT,
-      NAME,
-      OPERATOR
-    };
-
-  struct Token
-  {
-    std::string content;
-    TokenType type;
-  };
 
 private:
 
@@ -44,14 +32,20 @@ public:
 
   // Find a value within an expression
   template<class ConstrutiveIT, class EndIT>
-  std::pair<Value, Type> const &getValue(ConstrutiveIT &it, EndIT const &end)
+  std::pair<Value, Type> getValue(ConstrutiveIT &it, EndIT const &end)
   {
     while (it != end) {
       std::cout << "Looking up value: " << it->content << std::endl;
-      auto valueIt(values.find(it->content));
+      auto prefixIt(prefixes.find(it->content));
 
-      if (valueIt != values.end())
-	return valueIt->second;
+      if (prefixIt == prefixes.end())
+	{
+	  auto valueIt(values.find(it->content));
+
+	  if (valueIt != values.end())
+	    return valueIt->second;
+	  return makePrimitiveValueAndType(std::make_shared<Token>(*it));
+	}
       ++it;
     }
     throw std::runtime_error("No value found in expression!");
@@ -65,7 +59,7 @@ public:
       return UnaryOperator::getUnapplyable();
     }
   }
-  
+
   long unsigned int getTypeCastCost(Type const &source, Type const &dest)
   {
     auto possessed(source.properties);
@@ -79,7 +73,7 @@ public:
   // - both will only be incremented or assigned to greater values
   // - both won't be incremented further than `end`
   // - copies of `it` may be decremented and will always be between `begin` and `it`, and should not construct or destruct elements
-  // - all threee iterators have to be comparable.
+  // - all threee iterators have to be comparable, and provide a copy function
   // - ConstructiveIt and DestructiveIt shall not be copied
   template<class DestructiveIT, class ConstrutiveIT, class EndIT>
   std::pair<Value, Type> evaluateTokens(DestructiveIT &begin, ConstrutiveIT &it, EndIT const &end, UnaryOperator const &prevPrefix = UnaryOperator::getUnapplyable(), Value const &prevStored = {})
@@ -122,6 +116,8 @@ public:
 		which = 1;
 	      }
 	  }
+	if (!bestFunc)
+	  throw std::runtime_error("No prefix or postfix to apply :(");
 	value = std::visit([this, &value, bestFunc, prevStored, &it, end](auto const &returnType)
 			   {
 			     using T = std::remove_cv_t<std::remove_reference_t<decltype(returnType)>>;
@@ -136,6 +132,7 @@ public:
 			     else
 			       {
 				 auto itCopy(it.copy());
+
 				 return evaluateTokens(itCopy, it, end, returnType, bestFunc->func(prevStored, value.first));
 			       }
 			   }, bestFunc->signature.returnType);

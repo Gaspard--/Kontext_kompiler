@@ -1,3 +1,6 @@
+#pragma once
+
+#include "Token.hpp"
 
 constexpr inline bool isWhiteSpace(char c)
 {
@@ -20,7 +23,7 @@ struct EndIt{};
 
 struct DestructiveIt
 {
-  std::list<Kompiler::Token> &tokens;
+  std::list<Token> &tokens;
 
   auto &operator++()
   {
@@ -28,18 +31,18 @@ struct DestructiveIt
     return *this;
   }
 
-  auto &operator=(std::list<Kompiler::Token>::iterator const &other)
+  auto &operator=(std::list<Token>::iterator const &other)
   {
     tokens.erase(tokens.begin(), other);
     return *this;
   }
 
-  bool operator==(std::list<Kompiler::Token>::iterator const &it) const
+  bool operator==(std::list<Token>::iterator const &it) const
   {
     return tokens.begin() == it;
   }
 
-  bool operator!=(std::list<Kompiler::Token>::iterator const &it) const
+  bool operator!=(std::list<Token>::iterator const &it) const
   {
     return !(*this == it);
   }
@@ -47,7 +50,7 @@ struct DestructiveIt
 
 struct ConstructiveIt
 {
-  std::list<Kompiler::Token> &tokens; // TODO: replace with something better (needs to not invalidate iterators though.)
+  std::list<Token> &tokens; // TODO: replace with something better (needs to not invalidate iterators though.)
   std::string::const_iterator begin;
   std::string::const_iterator end;
   bool endReached;
@@ -64,7 +67,7 @@ struct ConstructiveIt
 	    auto it(begin);
 
 	    for (; it != end && (isDigit(*it) || isName(*it)); ++it);
-	    tokens.push_back({std::string(begin, it), Kompiler::TokenType::CONSTANT});
+	    tokens.push_back({std::string(begin, it), TokenType::CONSTANT});
 	    begin = it;
 	  }
 	else if (isName(*begin))
@@ -72,7 +75,7 @@ struct ConstructiveIt
 	    auto it(begin);
 
 	    for (; it != end && (isDigit(*it) || isName(*it)); ++it);
-	    tokens.push_back({std::string(begin, it), Kompiler::TokenType::NAME});
+	    tokens.push_back({std::string(begin, it), TokenType::NAME});
 	    begin = it;
 	  }
 	else
@@ -80,7 +83,7 @@ struct ConstructiveIt
 	    auto it(begin);
 
 	    for (; it != end && !isDigit(*it) && !isName(*it) && !isWhiteSpace(*it); ++it);
-	    tokens.push_back({std::string(begin, it), Kompiler::TokenType::OPERATOR});
+	    tokens.push_back({std::string(begin, it), TokenType::OPERATOR});
 	    begin = it;
 	  }
 	std::cout << "Created new token: " << tokens.back().content << std::endl;
@@ -114,12 +117,12 @@ struct ConstructiveIt
     return !endReached;
   }
 
-  bool operator==(std::list<Kompiler::Token>::iterator const & it) const
+  bool operator==(std::list<Token>::iterator const & it) const
   {
     return tokens.end() != it;
   }
 
-  bool operator!=(std::list<Kompiler::Token>::iterator const& it) const
+  bool operator!=(std::list<Token>::iterator const& it) const
   {
     return !(*this == it);
   }
@@ -138,7 +141,7 @@ struct ConstructiveIt
 inline void Kompiler::parseLine(std::string const &str)
 {
   std::cout << "Parsing: " << str << std::endl;
-  std::list<Kompiler::Token> tokens{};
+  std::list<Token> tokens{};
 
   ConstructiveIt constructiveIt{tokens, str.begin(), str.end(), false};
   ++constructiveIt;
