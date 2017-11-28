@@ -16,10 +16,7 @@
 
 class Kompiler
 {
-public:
-
 private:
-
   Stack stack;
   std::unordered_map<std::string, UnaryOperator> prefixes;
   std::unordered_map<std::string, std::pair<Value, Type>> values;
@@ -50,7 +47,7 @@ public:
   std::pair<Value, Type> getValue(ConstrutiveIT &it, EndIT const &end)
   {
     while (it != end) {
-      std::cout << "Looking up value: " << it->content << std::endl;
+      // std::cout << "Looking up value: " << it->content << std::endl;
       auto prefixIt(prefixes.find(it->content));
 
       if (prefixIt == prefixes.end())
@@ -109,8 +106,7 @@ public:
 	    UnaryOperator const &unaryPostfix((it == end) ? UnaryOperator::getUnapplyable() : getUnaryOperator(it->content, postfixes));
 
 	    long unsigned int bestCost(PropertyList::inf);
-	    int cur(0u);
-	    auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &which, &value, &cur](auto &func)
+	    auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &which, &value](auto &func)
 					{
 					  long unsigned int currentCost(getTypeCastCost(func.requiredProperties, value.second.properties));
 
@@ -118,15 +114,15 @@ public:
 					    {
 					      bestCost = currentCost;
 					      bestFunc = &func;
-					      which = cur;
+					      return true;
 					    }
+					  return false;
 					});
 
 	    for (auto &func : unaryPrefix.data)
 	      checkIfBetterCandidate(func);
-	    cur = 1u;
 	    for (auto &func : unaryPostfix.data)
-	      checkIfBetterCandidate(func);
+	      which |= checkIfBetterCandidate(func);
 	  }
 	  if (!bestFunc)
 	    throw std::runtime_error("No (Prefix or Postfix) UnaryOperator to appliable!");

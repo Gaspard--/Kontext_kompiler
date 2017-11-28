@@ -86,7 +86,7 @@ struct ConstructiveIt
 	    tokens.push_back({std::string(begin, it), TokenType::OPERATOR});
 	    begin = it;
 	  }
-	std::cout << "Created new token: " << tokens.back().content << std::endl;
+	// std::cout << "Created new token: " << tokens.back().content << std::endl;
       }
     return *this;
   }
@@ -140,7 +140,6 @@ struct ConstructiveIt
 
 inline void Kompiler::parseLine(std::string const &str)
 {
-  std::cout << "Parsing: " << str << std::endl;
   std::list<Token> tokens{};
 
   ConstructiveIt constructiveIt{tokens, str.begin(), str.end(), false};
