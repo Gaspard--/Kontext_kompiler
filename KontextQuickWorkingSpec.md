@@ -46,7 +46,7 @@ When a value is found or computed, the next symbol is looked up as a suffix:
 
 - Else if there is a `unary prefix` before the value and a `unary suffix` after the value:
   
-  The prefix or the suffix is decided based on the best match through overloading. In case of same match cost, an error is raised. (See [Overloading](#c-overload-resolution))
+  The prefix or the suffix is decided based on the best match through overloading. In case of same match cost, the prefix is chosen. (See [Overloading](#c-overload-resolution))
 
 - Otherwise if no symbol is left in the expression:
   
@@ -86,13 +86,15 @@ A type is a struct or primitive with a list of properties.
 A type may be promoted to a property if it matches that properties criterias.
 
 To a promotion is associated a specific cost.
+
 Multiple promotions can be chained, they can be considered as a single promotion of which the cost is the sum of the cost of all promotions.
-If mutliple "paths" to promotion are possible, the cheapest one is taken into account.
+
+Some properties have an infinit promotion cost: those can't be obtained through promotion.
 
 ### c) Overload resolution
 
-A unary can specify several types and property combinations it can accept.
+A unary can specify several property combinations it can accept.
 
 Overload resolution occurs when a `unary` is applied. If several are competing (unary prefix and postfix) both of the `unary`'s possiblillities are taken into account.
 
-If an overload fits except for a certain amount of properties, the cost of pormoting to these properties dertimins the cost of the overload, the cheapest overload is then chosen.
+If an overload fits except for a certain amount of properties, the cost of pormoting to these properties dertimins the cost of the overload. The cheapest overload is chosen.
