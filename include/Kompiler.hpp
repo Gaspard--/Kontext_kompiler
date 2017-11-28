@@ -29,7 +29,7 @@ public:
     prefixes["ID_DEBUG"].addFunc({{}, [](Value const &, DefinedValue const &val)
 					-> std::pair<Value, std::variant<Type, UnaryOperator>>
 					{
-					  std::cout << "Applying postfix!\n";
+					  std::cout << "Applying prefix!\n";
 					  return {val.value, val.type};
 					}});
     postfixes["ID_DEBUG"].addFunc({{}, [](Value const &, DefinedValue const &val)
