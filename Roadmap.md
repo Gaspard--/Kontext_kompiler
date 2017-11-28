@@ -1,39 +1,23 @@
 # Roadmap
 
-- [ ] This is out of date. The spec of Kontext too.
+Since the last roadmap was invalidated so fast, my new attitude shall be add as clear goal arises
 
-- [ ] Spec
-  - [ ] Syntax
-    - [ ] Symbol Types
-      - [x] Prefix
-        - [x] Prefix OP
-          - [x] normal prefix OP
-          - [x] name-prefix OP
-        - [x] Value
-          - [x] normal value
-          - [ ] meta value
-        - [ ] Suffix
-          - [x] normal suffix
-          - [ ] name suffix
-  - [ ] Builtin values and types
-    - [x] `__default_kontext_definitons__`
-    - [x] `{` and `}` (Scopes)
-  - [ ] Type sytem
-    - [ ] Value type sytem
-      - [ ] Value type declaration
-      - [ ] Value constraints
-      - [ ] Builtin Value types
-        - [ ] names
-        - [ ] strings
-    - [ ] Operator type sytem
-      - [ ] Operator declaration
-      - [ ] Builtin operators
 - [ ] Kompiler
-  - [ ] basic syntax parsing
-  - [ ] name lookup
-  - [ ] builtin types and values
-    - [ ] `__default_kontext_definitons__`
-    - [ ] `{` and `}`
-    - [ ] names
-    - [ ] strings
-  - [ ] name handling
+  - [x] basic syntax parsing
+    - [x] token lookup
+    - [x] prefix
+    - [x] postfix
+    - [x] token values
+  - [ ] property handling
+    - [x] obtainable properties
+    - [x] unobtainable properties
+    - [ ] casting obtainable properties
+  - [ ] type handling
+    - [ ] primitives
+      - [x] basic primitives
+      - [ ] type primitives
+    - [x] structs (unused but present)
+  - [ ] builtin values and operators
+    - [ ] basic side effect operators (+=, *= ...)
+    - [ ] basic pure operators (+, *, ...)
+    - [ ] variable declaration and undeclaration operator(s)
