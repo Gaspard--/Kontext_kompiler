@@ -125,33 +125,33 @@ public:
 
 			     static_assert(isValue || isPrefix, "Unhandled type in " __FILE__  ": " STRINGIZE(__LINE__));
 			     if constexpr (isValue)
- 			       return std::pair<Value, Type>{returnValueAndType.first, returnType};
+			       return std::pair<Value, Type>{returnValueAndType.first, returnType};
 			     else
-			     {
-			       auto itCopy(it.copy());
+			       {
+				 auto itCopy(it.copy());
 
-			       return evaluateTokens(itCopy, it, end, returnType, returnValueAndType.first);
-			     }
+				 return evaluateTokens(itCopy, it, end, returnType, returnValueAndType.first);
+			       }
 			   }, returnValueAndType.second);
-    if (!which)
-      {
-	if (begin == *prefixIt)
+	if (!which)
 	  {
-	    prefixIt.reset();
-	    begin = it.copy();
+	    if (begin == *prefixIt)
+	      {
+		prefixIt.reset();
+		begin = it.copy();
+	      }
+	    else if (prefixIt)
+	      --*prefixIt;
+	    else
+	      return value; // there was no prefix to apply
 	  }
-	else if (prefixIt)
-	  --*prefixIt;
 	else
-	  return value; // there was no prefix to apply
+	  {
+	    ++it;
+	    if (!prefixIt)
+	      ++begin;
+	  }
       }
-    else
-      {
-	++it;
-	if (!prefixIt)
-	  ++begin;
-      }
-  }
     return value;
   }
 
