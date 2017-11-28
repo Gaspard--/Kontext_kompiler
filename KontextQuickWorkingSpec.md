@@ -89,7 +89,7 @@ To a promotion is associated a specific cost.
 
 Multiple promotions can be chained, they can be considered as a single promotion of which the cost is the sum of the cost of all promotions.
 
-Some promotions have infinit cost: those ca only be obtain through explicit pormotion.
+Some properties have an infinit promotion cost: those can't be obtained through promotion.
 
 ### c) Overload resolution
 
