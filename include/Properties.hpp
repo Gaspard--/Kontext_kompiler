@@ -9,7 +9,7 @@ public:
   using PropertyId = unsigned long int;
   using Properties = std::unordered_set<PropertyId>;
 
-  static constexpr PropertyId inf = static_cast<PropertyId>(-1);
+  static constexpr unsigned long int inf = static_cast<PropertyId>(-1);
 
   struct PropertyInfo
   {
@@ -29,7 +29,7 @@ public:
 
 private:
   long unsigned int count;
-  std::unordered_map<unsigned long int, PropertyInfo> propertyInfos;
+  std::unordered_map<PropertyId, PropertyInfo> propertyInfos;
 
 public:
   PropertyList()
@@ -57,7 +57,7 @@ public:
     return cost;
   }
 
-  long unsigned int createProperty(Properties requirements, unsigned long int cost)
+  PropertyId createProperty(Properties requirements, unsigned long int cost)
   {
     propertyInfos.try_emplace(count, requirements, cost);
     return count++;
