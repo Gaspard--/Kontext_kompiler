@@ -27,7 +27,11 @@ private:
   PropertyList propertyList;
 
 public:
-  Kompiler() = default;
+  Kompiler()
+  {
+    // prefixes["++"].addFunc;
+  }
+
   ~Kompiler() = default;
 
   // Find a value within an expression
@@ -79,43 +83,62 @@ public:
       throw std::runtime_error("Can't evaluate nothing yet :/");
     auto value(getValue(it, end));
     std::optional<decltype(it.copy())> prefixIt;
+    bool prevPrefixApplied(false);
 
     if (it != begin)
       --*(prefixIt = it.copy());
     ++it;
-    while (prefixIt && it != end)
+    while (!prevPrefixApplied && (prefixIt || it != end))
       {
-	UnaryOperator const &unaryPrefix(prefixIt ? prevPrefix : getUnaryOperator((*prefixIt)->content, prefixes));
-	UnaryOperator const &unaryPostfix((it == end) ? UnaryOperator::getUnapplyable() : getUnaryOperator(it->content, postfixes));
-
-	bool which(0u);
-	long unsigned int bestCost(PropertyList::inf);
 	UnaryFunction const *bestFunc(nullptr);
-
-	for (auto &func : unaryPrefix.data)
+	{
+	  int which(0u);
 	  {
-	    long unsigned int currentCost(getTypeCastCost(func.signature.properties, value.second.properties));
+	    UnaryOperator const &unaryPrefix(!prefixIt ? prevPrefix : getUnaryOperator((*prefixIt)->content, prefixes));
+	    UnaryOperator const &unaryPostfix((it == end) ? UnaryOperator::getUnapplyable() : getUnaryOperator(it->content, postfixes));
 
-	    if (currentCost < bestCost)
-	      {
-		bestCost = currentCost;
-		bestFunc = &func;
-	      }
-	  }
-	for (auto &func : unaryPostfix.data)
-	  {
-	    long unsigned int currentCost(getTypeCastCost(func.signature.properties, value.second.properties));
+	    long unsigned int bestCost(PropertyList::inf);
+	    int cur(0u);
+	    auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &which, &value, &cur](auto &func)
+					{
+					  long unsigned int currentCost(getTypeCastCost(func.requiredProperties, value.second.properties));
 
-	    if (currentCost < bestCost)
-	      {
-		bestCost = currentCost;
-		bestFunc = &func;
-		which = 1;
-	      }
+					  if (currentCost < bestCost)
+					    {
+					      bestCost = currentCost;
+					      bestFunc = &func;
+					      which = cur;
+					    }
+					});
+
+	    for (auto &func : unaryPrefix.data)
+	      checkIfBetterCandidate(func);
+	    cur = 1u;
+	    for (auto &func : unaryPostfix.data)
+	      checkIfBetterCandidate(func);
 	  }
-	if (!bestFunc)
-	  throw std::runtime_error("No prefix or postfix to apply :(");
-	std::pair<Value, std::variant<Type, UnaryOperator>> returnValueAndType{bestFunc->func(prevStored, value.first)};
+	  if (!bestFunc)
+	    throw std::runtime_error("No (Prefix or Postfix) UnaryOperator to appliable!");
+	  if (!which)
+	    {
+	      if (begin == *prefixIt)
+		{
+		  prefixIt.reset();
+		  begin = it.copy();
+		}
+	      else if (prefixIt)
+		--*prefixIt;
+	      else
+		prevPrefixApplied = true;
+	    }
+	  else
+	    {
+	      ++it;
+	      if (!prefixIt)
+		++begin;
+	    }
+	}
+	std::pair<Value, std::variant<Type, UnaryOperator>> returnValueAndType{bestFunc->func(prevStored, value.first, value.second)};
 
 	value = std::visit([this, &value, bestFunc, prevStored, &it, end, &returnValueAndType](auto const &returnType)
 			   {
@@ -125,7 +148,7 @@ public:
 
 			     static_assert(isValue || isPrefix, "Unhandled type in " __FILE__  ": " STRINGIZE(__LINE__));
 			     if constexpr (isValue)
-			       return std::pair<Value, Type>{returnValueAndType.first, returnType};
+			     return std::pair<Value, Type>{returnValueAndType.first, returnType};
 			     else
 			       {
 				 auto itCopy(it.copy());
@@ -133,24 +156,6 @@ public:
 				 return evaluateTokens(itCopy, it, end, returnType, returnValueAndType.first);
 			       }
 			   }, returnValueAndType.second);
-	if (!which)
-	  {
-	    if (begin == *prefixIt)
-	      {
-		prefixIt.reset();
-		begin = it.copy();
-	      }
-	    else if (prefixIt)
-	      --*prefixIt;
-	    else
-	      return value; // there was no prefix to apply
-	  }
-	else
-	  {
-	    ++it;
-	    if (!prefixIt)
-	      ++begin;
-	  }
       }
     return value;
   }

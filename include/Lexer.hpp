@@ -129,12 +129,12 @@ struct ConstructiveIt
 
   bool operator==(DestructiveIt const &) const
   {
-    return tokens.empty();
+    return tokens.size() == 1;
   }
     
-  bool operator!=(DestructiveIt const &) const
+  bool operator!=(DestructiveIt const &other) const
   {
-    return !tokens.empty();
+    return !(*this == other);
   }
 };
 
@@ -149,4 +149,7 @@ inline void Kompiler::parseLine(std::string const &str)
   EndIt endIt{};
 
   auto value(evaluateTokens(destructiveIt, constructiveIt, endIt));
+
+  if (constructiveIt != endIt)
+    throw std::runtime_error("Not all tokens where consumed!");
 }

@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] This is out of date. The spec of Kontext too.
+
 - [ ] Spec
   - [ ] Syntax
     - [ ] Symbol Types
