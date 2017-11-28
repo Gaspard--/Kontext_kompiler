@@ -29,7 +29,18 @@ private:
 public:
   Kompiler()
   {
-    // prefixes["++"].addFunc;
+    prefixes["ID_DEBUG"].addFunc({{}, [](Value const &, Value const &val, Type const &type)
+					-> std::pair<Value, std::variant<Type, UnaryOperator>>
+					{
+					  std::cout << "Applying prefix!\n";
+					  return {val, type};
+					}});
+    postfixes["ID_DEBUG"].addFunc({{}, [](Value const &, Value const &val, Type const &type)
+					 -> std::pair<Value, std::variant<Type, UnaryOperator>>
+					 {
+					   std::cout << "Applying postfix!\n";
+					   return {val, type};
+					 }});
   }
 
   ~Kompiler() = default;

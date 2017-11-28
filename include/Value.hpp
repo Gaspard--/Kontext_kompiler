@@ -51,7 +51,7 @@ struct UnaryOperator
     return unapplyable;
   }
 
-  void addFunc(UnaryFunction const &func)
+  void addFunc(UnaryFunction &&func)
   {
     data.push_back(func);
   }

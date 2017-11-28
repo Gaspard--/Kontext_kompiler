@@ -12,6 +12,7 @@ void Kompiler::process(std::istream &stream)
    */
  std::istreambuf_iterator<char> begin(stream);
 
+ std::cout << "> ";
  while (begin != std::istreambuf_iterator<char>{})
     {
       std::string line{};
@@ -19,6 +20,7 @@ void Kompiler::process(std::istream &stream)
       for (; !isEndOfLine(*begin); ++begin)
 	line += *begin;
       parseLine(line);
-      for (; isEndOfLine(*begin); ++begin);
+      for (; isEndOfLine(*begin); ++begin)
+	std::cout << "> ";
     }
 }
