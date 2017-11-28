@@ -19,24 +19,24 @@ class Kompiler
 private:
   Stack stack;
   std::unordered_map<std::string, UnaryOperator> prefixes;
-  std::unordered_map<std::string, std::pair<Value, Type>> values;
+  std::unordered_map<std::string, DefinedValue> values;
   std::unordered_map<std::string, UnaryOperator> postfixes;
   PropertyList propertyList;
 
 public:
   Kompiler()
   {
-    prefixes["ID_DEBUG"].addFunc({{}, [](Value const &, Value const &val, Type const &type)
+    prefixes["ID_DEBUG"].addFunc({{}, [](Value const &, DefinedValue const &val)
 					-> std::pair<Value, std::variant<Type, UnaryOperator>>
 					{
-					  std::cout << "Applying prefix!\n";
-					  return {val, type};
+					  std::cout << "Applying postfix!\n";
+					  return {val.value, val.type};
 					}});
-    postfixes["ID_DEBUG"].addFunc({{}, [](Value const &, Value const &val, Type const &type)
+    postfixes["ID_DEBUG"].addFunc({{}, [](Value const &, DefinedValue const &val)
 					 -> std::pair<Value, std::variant<Type, UnaryOperator>>
 					 {
 					   std::cout << "Applying postfix!\n";
-					   return {val, type};
+					   return {val.value, val.type};
 					 }});
   }
 
@@ -44,7 +44,7 @@ public:
 
   // Find a value within an expression
   template<class ConstrutiveIT, class EndIT>
-  std::pair<Value, Type> getValue(ConstrutiveIT &it, EndIT const &end)
+  DefinedValue getValue(ConstrutiveIT &it, EndIT const &end)
   {
     while (it != end) {
       // std::cout << "Looking up value: " << it->content << std::endl;
@@ -56,7 +56,7 @@ public:
 
 	  if (valueIt != values.end())
 	    return valueIt->second;
-	  return makePrimitiveValueAndType(std::make_shared<Token>(*it));
+	  return makePrimitiveDefinedValue(std::make_shared<Token>(*it));
 	}
       ++it;
     }
@@ -85,11 +85,11 @@ public:
   // - all threee iterators have to be comparable, and provide a copy function
   // - ConstructiveIt and DestructiveIt shall not be copied
   template<class DestructiveIT, class ConstrutiveIT, class EndIT>
-  std::pair<Value, Type> evaluateTokens(DestructiveIT &begin, ConstrutiveIT &it, EndIT const &end, UnaryOperator const &prevPrefix = UnaryOperator::getUnapplyable(), Value const &prevStored = {})
+  DefinedValue evaluateTokens(DestructiveIT &begin, ConstrutiveIT &it, EndIT const &end, UnaryOperator const &prevPrefix = UnaryOperator::getUnapplyable(), Value const &prevStored = {})
   {
     if (it == end)
       throw std::runtime_error("Can't evaluate nothing yet :/");
-    auto value(getValue(it, end));
+    DefinedValue value(getValue(it, end));
     std::optional<decltype(it.copy())> prefixIt;
     bool prevPrefixApplied(false);
 
@@ -106,9 +106,9 @@ public:
 	    UnaryOperator const &unaryPostfix((it == end) ? UnaryOperator::getUnapplyable() : getUnaryOperator(it->content, postfixes));
 
 	    long unsigned int bestCost(PropertyList::inf);
-	    auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &which, &value](auto &func)
+	    auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &value](auto &func)
 					{
-					  long unsigned int currentCost(getTypeCastCost(func.requiredProperties, value.second.properties));
+					  long unsigned int currentCost(getTypeCastCost(func.requiredProperties, value.type.properties));
 
 					  if (currentCost < bestCost)
 					    {
@@ -145,9 +145,9 @@ public:
 		++begin;
 	    }
 	}
-	std::pair<Value, std::variant<Type, UnaryOperator>> returnValueAndType{bestFunc->func(prevStored, value.first, value.second)};
+	std::pair<Value, std::variant<Type, UnaryOperator>> returnValueAndType{bestFunc->func(prevStored, value)};
 
-	value = std::visit([this, &value, bestFunc, prevStored, &it, end, &returnValueAndType](auto const &returnType)
+	value = std::visit([this, &it, end, &returnValueAndType](auto const &returnType)
 			   {
 			     using T = std::remove_cv_t<std::remove_reference_t<decltype(returnType)>>;
 			     constexpr bool isValue(std::is_same_v<T, Type>);
@@ -155,7 +155,7 @@ public:
 
 			     static_assert(isValue || isPrefix, "Unhandled type in " __FILE__  ": " STRINGIZE(__LINE__));
 			     if constexpr (isValue)
-			     return std::pair<Value, Type>{returnValueAndType.first, returnType};
+			       return DefinedValue{returnValueAndType.first, returnType};
 			     else
 			       {
 				 auto itCopy(it.copy());
@@ -171,5 +171,3 @@ public:
   
   void process(std::istream &);
 };
-
-#include "Lexer.hpp"

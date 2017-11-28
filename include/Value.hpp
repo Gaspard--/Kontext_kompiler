@@ -40,6 +40,12 @@ struct Type
   PropertyList::Properties properties;
 };
 
+struct DefinedValue
+{
+  Value value;
+  Type type;
+};
+
 struct UnaryOperator
 {
   std::vector<UnaryFunction> data;
@@ -59,16 +65,16 @@ struct UnaryOperator
 
 struct UnaryFunction
 {
-  using FunctionPtr = std::pair<Value, std::variant<Type, UnaryOperator>>(Value const &stored, Value const &param, Type const &paramType);
+  using FunctionPtr = std::pair<Value, std::variant<Type, UnaryOperator>>(Value const &stored, DefinedValue const &param);
 
   PropertyList::Properties requiredProperties;
   FunctionPtr *func;
 };
 
 template<class T>
-std::pair<Value, Type> makePrimitiveValueAndType(T &&first)
+DefinedValue makePrimitiveDefinedValue(T &&first)
 {
   Primitive primitive(first);
 
-  return std::pair<Value, Type>{Value{primitive}, Type{static_cast<PrimitiveId>(primitive.index()), {}}};
+  return DefinedValue{Value{primitive}, Type{static_cast<PrimitiveId>(primitive.index()), {}}};
 }

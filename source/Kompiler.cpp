@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Kompiler.hpp"
+#include "Lexer.hpp"
 
 void Kompiler::process(std::istream &stream)
 {

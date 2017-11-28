@@ -147,8 +147,25 @@ inline void Kompiler::parseLine(std::string const &str)
   DestructiveIt destructiveIt{tokens};
   EndIt endIt{};
 
-  auto value(evaluateTokens(destructiveIt, constructiveIt, endIt));
+  DefinedValue value(evaluateTokens(destructiveIt, constructiveIt, endIt));
 
+  std::cout << "Value contents: ";
+  bool first(true);
+  for (Primitive &p : value.value)
+    {
+      if (!first)
+	std::cout << ", ";
+      first = true;
+      std::visit([](auto const &p)
+		 {
+		   if constexpr (std::is_same_v<decltype(p), std::shared_ptr<Token> const &>)
+				  std::cout << *p;
+		   else
+		     std::cout << p;
+		 }, p);
+    }
+  std::cout << std::endl;
+  
   if (constructiveIt != endIt)
     throw std::runtime_error("Not all tokens where consumed!");
 }
