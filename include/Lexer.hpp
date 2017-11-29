@@ -176,7 +176,6 @@ inline void Kompiler::parseLine(std::string const &str)
 		first = true;
 		std::visit([](auto const &p)
 			   {
-			     // if constexpr (std::is_same_v<decltype(p), std::shared_ptr<Token> const &>)
 			     if constexpr (isSharedPtr(p))
 			       std::cout << *p;
 			     else

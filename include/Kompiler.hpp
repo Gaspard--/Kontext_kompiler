@@ -84,6 +84,31 @@ public:
 
   NoEffect noEffect;
 
+  std::pair<UnaryFunction const *, int> getBestFunction(UnaryOperator const &unaryPrefix, UnaryOperator const &unaryPostfix, Type const &type)
+  {
+    UnaryFunction const *bestFunc(nullptr);
+    int which(false);
+    long unsigned int bestCost(PropertyList::inf);
+    auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &type](auto &func)
+				{
+				  long unsigned int currentCost(getTypeCastCost(type.properties, func.requiredProperties));
+				  
+				  if (currentCost < bestCost)
+				    {
+				      bestCost = currentCost;
+				      bestFunc = &func;
+				      return true;
+				    }
+				  return false;
+				});
+
+    for (auto &func : unaryPrefix.data)
+      checkIfBetterCandidate(func);
+    for (auto &func : unaryPostfix.data)
+      which |= checkIfBetterCandidate(func);
+    return {bestFunc , which};
+  }
+
   // Contract:
   // - only values between `begin` and `it` will be accessed.
   // - both will only be incremented or assigned to greater values
@@ -105,57 +130,31 @@ public:
     if (it != begin)
       --*(prefixIt = it.copy());
     ++it;
-    while (!prevPrefixApplied)
+    do
       {
 	UnaryFunction const *bestFunc(nullptr);
-	{
-	  int which(0u);
+	bool which;
+	std::tie(bestFunc, which) = getBestFunction(!prefixIt ? prevPrefix : getUnaryOperator((*prefixIt)->content, prefixes),
+						    (it == end) ? UnaryOperator::getUnapplyable() : getUnaryOperator(it->content, postfixes),
+						    value.type);
+	if (!bestFunc)
+	  throw std::runtime_error("No (Prefix or Postfix) UnaryOperator to appliable!");
+	if (which)
 	  {
-	    UnaryOperator const &unaryPrefix(!prefixIt ? prevPrefix : getUnaryOperator((*prefixIt)->content, prefixes));
-	    UnaryOperator const &unaryPostfix((it == end) ? UnaryOperator::getUnapplyable() : getUnaryOperator(it->content, postfixes));
-
-	    long unsigned int bestCost(PropertyList::inf);
-	    auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &value](auto &func)
-					{
-					  long unsigned int currentCost(getTypeCastCost(value.type.properties, func.requiredProperties));
-
-					  if (currentCost < bestCost)
-					    {
-					      bestCost = currentCost;
-					      bestFunc = &func;
-					      return true;
-					    }
-					  return false;
-					});
-
-	    for (auto &func : unaryPrefix.data)
-	      checkIfBetterCandidate(func);
-	    for (auto &func : unaryPostfix.data)
-	      which |= checkIfBetterCandidate(func);
+	    ++it;
+	    if (!prefixIt)
+	      ++destroyer;
 	  }
-	  if (!bestFunc)
-	    throw std::runtime_error("No (Prefix or Postfix) UnaryOperator to appliable!");
-	  if (!which)
+	else
+	  if (!prefixIt)
+	    prevPrefixApplied = true;
+	  else if (begin == *prefixIt)
 	    {
-	      if (!prefixIt)
-		prevPrefixApplied = true;
-	      else if (begin == *prefixIt)
-		{
-		  prefixIt.reset();
-		  destroyer = it.copy();
-		}
-	      else
-		--*prefixIt;
+	      prefixIt.reset();
+	      destroyer = it.copy();
 	    }
 	  else
-	    {
-	      ++it;
-	      if (!prefixIt)
-		++destroyer;
-	    }
-	}
-	std::variant<DefinedValue, std::pair<Value, UnaryOperator>> ret{bestFunc->func(prevStored, value)};
-
+	    --*prefixIt;
 	value = std::visit([this, &it, end](auto const &ret)
 			   {
 			     using T = std::remove_cv_t<std::remove_reference_t<decltype(ret)>>;
@@ -164,8 +163,8 @@ public:
 			       return ret;
 			     else
 			       return evaluateTokens(noEffect, it, end, ret.second, ret.first);
-			   }, ret);
-      }
+			   }, bestFunc->func(prevStored, value));
+      } while (!prevPrefixApplied);
     return value;
   }
 
