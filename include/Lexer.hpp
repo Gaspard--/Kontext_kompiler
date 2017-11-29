@@ -139,6 +139,19 @@ struct ConstructiveIt
   }
 };
 
+template<class T>
+constexpr bool isSharedPtr(std::shared_ptr<T> const &)
+{
+  return true;
+}
+
+template<class T>
+constexpr bool isSharedPtr(T const &)
+{
+  return false;
+}
+
+
 inline void Kompiler::parseLine(std::string const &str)
 {
   std::list<Token> tokens{};
@@ -163,8 +176,9 @@ inline void Kompiler::parseLine(std::string const &str)
 		first = true;
 		std::visit([](auto const &p)
 			   {
-			     if constexpr (std::is_same_v<decltype(p), std::shared_ptr<Token> const &>)
-					    std::cout << *p;
+			     // if constexpr (std::is_same_v<decltype(p), std::shared_ptr<Token> const &>)
+			     if constexpr (isSharedPtr(p))
+			       std::cout << *p;
 			     else
 			       std::cout << p;
 			   }, p);

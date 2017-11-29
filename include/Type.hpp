@@ -43,8 +43,25 @@ struct UnaryFunction
 template<class T>
 DefinedValue makePrimitiveDefinedValue(T &&first)
 {
-  Primitive primitive(first);
+  Primitive primitive(std::move(first));
 
-  return DefinedValue{Value{primitive}, Type{primitive.index(), {PropertyList::getPrimitiveProperty<T>()}}};
+  return DefinedValue{Value{primitive}, Type{0, {PropertyList::getPrimitiveProperty<std::remove_reference_t<T>>()}}};
 }
 
+inline std::ostream &operator<<(std::ostream &out, Type const &)
+{
+  out << "TODO: add way to print type";
+  return out;
+}
+
+inline std::ostream &operator<<(std::ostream &out, UnaryOperator const &)
+{
+  out << "TODO: add way to print unary operator";
+  return out;
+}
+
+inline std::ostream &operator<<(std::ostream &out, UnaryFunction const &)
+{
+  out << "TODO: add way to print unary function";
+  return out;
+}

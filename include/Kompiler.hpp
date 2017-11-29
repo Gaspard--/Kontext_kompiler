@@ -25,59 +25,12 @@ private:
 public:
   Kompiler()
   {
-    prefixes["ID_DEBUG"].addFunc({{}, [](Value const &, DefinedValue const &val)
-					-> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
-					{
-					  std::cout << "Applying prefix!\n";
-					  return val;
-					}});
-    postfixes["ID_DEBUG"].addFunc({{}, [](Value const &, DefinedValue const &val)
-					 -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
-					 {
-					   std::cout << "Applying postfix!\n";
-					   return val;
-					 }});
-    postfixes["asInt"].addFunc({{PropertyList::getPrimitiveProperty<std::shared_ptr<Token>>()},
-	  [](Value const &, DefinedValue const &val)
-	    -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
-	    {
-	      auto const &token(std::get<std::shared_ptr<Token>>(val.value[0]));
-	      long unsigned int ret(0u);
-
-	      // TODO: wait for <char_conv> or do something serious
-	      for (auto it(token->content.begin()); it != token->content.end(); ++it)
-		{
-		  ret *= 10;
-		  ret += *it - '0';
-		}
-
-	      return makePrimitiveDefinedValue(ret);
-	    }});
-    prefixes["INT_ONLY"].addFunc({{PropertyList::getPrimitiveProperty<long unsigned int>()},
-	  [](Value const &, DefinedValue const &val)
-	    -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
-	    {
-	      std::cout << "Applying INT_ONLY prefix!\n";
-	      
-	      return val;
-	    }});
-    postfixes["+"].addFunc({{PropertyList::getPrimitiveProperty<long unsigned int>()},
-	  [](Value const &, DefinedValue const &val)
-	    -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
-	    {
-	      UnaryOperator add;
-
-	      add.addFunc({{PropertyList::getPrimitiveProperty<long unsigned int>()},
-		    [](Value const &left, DefinedValue const &right)
-		      -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
-		      {
-			return makePrimitiveDefinedValue(std::get<long unsigned int>(left[0]) + std::get<long unsigned int>(right.value[0]));
-		      }});
-	      return std::pair<Value, UnaryOperator>{val.value, add};
-	    }});
+    createDefaultDefinitions();
   }
 
   ~Kompiler() = default;
+
+  void createDefaultDefinitions();
 
   // Find a value within an expression
   template<class ConstrutiveIT, class EndIT>

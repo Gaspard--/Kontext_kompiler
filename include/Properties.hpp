@@ -36,6 +36,7 @@ private:
   template<class T, class... Types, size_t... Indices>
   static constexpr PropertyId getPrimitivePropertyImpl(std::variant<Types...>, std::index_sequence<Indices...>)
   {
+    static_assert((std::is_same_v<T, Types> || ...), "Invalid type passed to getPrimitiveProperty<...>()");
     return ((std::is_same_v<T, Types> ? Indices : 0) + ...);
   }
 
@@ -58,18 +59,17 @@ public:
     long unsigned int cost(0u);
 
     for (auto &property : required)
-      {
-	if (possessed.find(property) != possessed.end())
-	  continue;
-	possessed.insert(property);
+      if (possessed.find(property) == possessed.end())
+	{
+	  possessed.insert(property);
 
-	PropertyInfo const &info(propertyInfos[property]);
-	long unsigned int reqCost(getCost(possessed, info.requirements));
+	  PropertyInfo const &info(propertyInfos[property]);
+	  long unsigned int reqCost(getCost(possessed, info.requirements));
 
-	if (info.cost == inf || reqCost == inf)
-	  return inf;
-	cost += info.cost + reqCost;
-      }
+	  if (info.cost == inf || reqCost == inf)
+	    return inf;
+	  cost += info.cost + reqCost;
+	}
     return cost;
   }
 
