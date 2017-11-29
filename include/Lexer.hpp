@@ -104,6 +104,7 @@ struct ConstructiveIt
   auto copy()
   {
     auto tmp(tokens.end());
+
     return --tmp;
   }
 
@@ -117,9 +118,9 @@ struct ConstructiveIt
     return !endReached;
   }
 
-  bool operator==(std::list<Token>::iterator const & it) const
+  bool operator==(std::list<Token>::iterator it) const
   {
-    return tokens.end() != it;
+    return tokens.end() == ++it;
   }
 
   bool operator!=(std::list<Token>::iterator const& it) const
@@ -147,24 +148,31 @@ inline void Kompiler::parseLine(std::string const &str)
   DestructiveIt destructiveIt{tokens};
   EndIt endIt{};
 
-  DefinedValue value(evaluateTokens(destructiveIt, constructiveIt, endIt));
+  UnaryOperator printVal;
 
-  std::cout << "Value contents: ";
-  bool first(true);
-  for (Primitive &p : value.value)
-    {
-      if (!first)
-	std::cout << ", ";
-      first = true;
-      std::visit([](auto const &p)
-		 {
-		   if constexpr (std::is_same_v<decltype(p), std::shared_ptr<Token> const &>)
-				  std::cout << *p;
-		   else
-		     std::cout << p;
-		 }, p);
-    }
-  std::cout << std::endl;
+  printVal.addFunc({{propertyList.createProperty({}, PropertyList::inf - 1)},
+	[](Value const &, DefinedValue const &value)
+	  -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
+	  {
+	    std::cout << "Value contents: ";
+	    bool first(true);
+	    for (Primitive const &p : value.value)
+	      {
+		if (!first)
+		  std::cout << ", ";
+		first = true;
+		std::visit([](auto const &p)
+			   {
+			     if constexpr (std::is_same_v<decltype(p), std::shared_ptr<Token> const &>)
+					    std::cout << *p;
+			     else
+			       std::cout << p;
+			   }, p);
+	      }
+	    std::cout << std::endl;
+	    return value;
+	  }});
+  evaluateTokens(destructiveIt, constructiveIt, endIt, printVal);
   
   if (constructiveIt != endIt)
     throw std::runtime_error("Not all tokens where consumed!");

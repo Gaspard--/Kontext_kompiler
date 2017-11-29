@@ -3,6 +3,8 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#include "Value.hpp"
+
 class PropertyList
 {
 public:
@@ -31,10 +33,24 @@ private:
   long unsigned int count;
   std::unordered_map<PropertyId, PropertyInfo> propertyInfos;
 
-public:
-  PropertyList()
-    : count(0), propertyInfos{}
+  template<class T, class... Types, size_t... Indices>
+  static constexpr PropertyId getPrimitivePropertyImpl(std::variant<Types...>, std::index_sequence<Indices...>)
   {
+    return ((std::is_same_v<T, Types> ? Indices : 0) + ...);
+  }
+
+public:
+  template<class T>
+  static constexpr PropertyId getPrimitiveProperty()
+  {
+    return getPrimitivePropertyImpl<T>(Primitive{}, std::make_index_sequence<std::variant_size_v<Primitive>>());
+  }
+
+  PropertyList()
+    : count(), propertyInfos{}
+  {
+    while (count < std::variant_size_v<Primitive>)
+      createProperty({}, PropertyList::inf);
   }
 
   long unsigned int getCost(Properties &possessed, Properties const &required)
