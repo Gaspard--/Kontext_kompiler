@@ -3,6 +3,8 @@
 #include "Value.hpp"
 #include "Properties.hpp"
 
+struct Kompiler;
+
 struct Type
 {
   DataType dataType;
@@ -13,6 +15,9 @@ struct DefinedValue
 {
   Value value;
   Type type;
+  DefinedValue(DefinedValue const &) = delete;
+  DefinedValue(DefinedValue &&) = default;
+  DefinedValue &operator=(DefinedValue &&) = default;
 };
 
 struct UnaryOperator
@@ -30,11 +35,22 @@ struct UnaryOperator
   {
     data.push_back(func);
   }
+
+  template<DefinedValue(*func)(Kompiler &kompiler, Value &&stored, DefinedValue &&param)>
+  void addFunc(PropertyList::Properties requiredProperties)
+  {
+    addFunc(UnaryFunction{requiredProperties,
+			  [](Kompiler &kompiler, Value &&stored, DefinedValue &&param)
+			  -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
+			  {
+			    return {func(kompiler, std::move(stored), std::move(param))};
+			  }});
+  }
 };
 
 struct UnaryFunction
 {
-  using FunctionPtr = std::variant<DefinedValue, std::pair<Value, UnaryOperator>>(Value const &stored, DefinedValue const &param);
+  using FunctionPtr = std::variant<DefinedValue, std::pair<Value, UnaryOperator>>(Kompiler &kompiler, Value &&stored, DefinedValue &&param);
 
   PropertyList::Properties requiredProperties;
   FunctionPtr *func;
@@ -43,9 +59,10 @@ struct UnaryFunction
 template<class T>
 DefinedValue makePrimitiveDefinedValue(T &&first)
 {
-  Primitive primitive(std::move(first));
+  DefinedValue result{{}, Type{0, {PropertyList::getPrimitiveProperty<std::remove_reference_t<T>>()}}};
 
-  return DefinedValue{Value{primitive}, Type{0, {PropertyList::getPrimitiveProperty<std::remove_reference_t<T>>()}}};
+  result.value.emplace_back(std::move(first));
+  return result;
 }
 
 inline std::ostream &operator<<(std::ostream &out, Type const &)
@@ -65,3 +82,36 @@ inline std::ostream &operator<<(std::ostream &out, UnaryFunction const &)
   out << "TODO: add way to print unary function";
   return out;
 }
+
+template<class T>
+constexpr bool isUniquePtr(std::unique_ptr<T> const &)
+{
+  return true;
+}
+
+template<class T>
+constexpr bool isUniquePtr(T const &)
+{
+  return false;
+}
+
+inline Value copy(Value const &v)
+{
+  Value result;
+
+  for (auto const &p : v)
+    std::visit([&result](auto const &p)
+	       {
+		 if constexpr (isUniquePtr(p))
+				result.emplace_back(new std::remove_reference_t<decltype(*p)>(*p));
+		 else
+		   result.emplace_back(p);
+	       }, p);
+  return std::move(result);
+}
+
+inline DefinedValue copy(DefinedValue const &v)
+{
+  return DefinedValue{copy(v.value), v.type};
+}
+

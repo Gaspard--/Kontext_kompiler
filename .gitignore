@@ -33,7 +33,8 @@
 kontext_kompiler
 
 # Build directory
-build/
+release/
+debug/
 
 # Emacs backup files
 *~

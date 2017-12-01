@@ -37,7 +37,7 @@ private:
   static constexpr PropertyId getPrimitivePropertyImpl(std::variant<Types...>, std::index_sequence<Indices...>)
   {
     static_assert((std::is_same_v<T, Types> || ...), "Invalid type passed to getPrimitiveProperty<...>()");
-    return ((std::is_same_v<T, Types> ? Indices : 0) + ...);
+    return ((std::is_same_v<T, Types> * Indices) + ...);
   }
 
 public:

@@ -9,13 +9,13 @@ constexpr inline bool isWhiteSpace(char c)
 
 constexpr inline bool isDigit(char c)
 {
-  return (((unsigned)c - '0') <= '9' - '0');
+  return ((static_cast<unsigned int>(c) - '0') <= '9' - '0');
 }
 
 constexpr inline bool isName(char c)
 {
-  return ((((unsigned)c - 'A') <= 'Z' - 'A')
-	  || (((unsigned)c - 'a') <= 'z' - 'a')
+  return (((static_cast<unsigned int>(c) - 'A') <= 'Z' - 'A')
+	  || ((static_cast<unsigned int>(c) - 'a') <= 'z' - 'a')
 	  || c == '_');
 }
 
@@ -139,19 +139,6 @@ struct ConstructiveIt
   }
 };
 
-template<class T>
-constexpr bool isSharedPtr(std::shared_ptr<T> const &)
-{
-  return true;
-}
-
-template<class T>
-constexpr bool isSharedPtr(T const &)
-{
-  return false;
-}
-
-
 inline void Kompiler::parseLine(std::string const &str)
 {
   std::list<Token> tokens{};
@@ -164,28 +151,28 @@ inline void Kompiler::parseLine(std::string const &str)
   UnaryOperator printVal;
 
   printVal.addFunc({{propertyList.createProperty({}, PropertyList::inf - 1)},
-	[](Value const &, DefinedValue const &value)
-	  -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
-	  {
-	    std::cout << "Value contents: ";
-	    bool first(true);
-	    for (Primitive const &p : value.value)
-	      {
-		if (!first)
-		  std::cout << ", ";
-		first = true;
-		std::visit([](auto const &p)
-			   {
-			     if constexpr (isSharedPtr(p))
-			       std::cout << *p;
-			     else
-			       std::cout << p;
-			   }, p);
-	      }
-	    std::cout << std::endl;
-	    return value;
-	  }});
-  evaluateTokens(destructiveIt, constructiveIt, endIt, printVal);
+  	[](Kompiler &, Value &&, DefinedValue &&value)
+  	  -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
+  	  {
+  	    std::cout << "Value contents: ";
+  	    bool first(true);
+  	    for (Primitive const &p : value.value)
+  	      {
+  		if (!first)
+  		  std::cout << ", ";
+  		first = true;
+  		std::visit([](auto const &p)
+  			   {
+  			     if constexpr (isUniquePtr(p))
+  			       std::cout << *p;
+  			     else
+  			       std::cout << p;
+  			   }, p);
+  	      }
+  	    std::cout << std::endl;
+  	    return {std::move(value)};
+  	  }});
+  evaluateTokens(destructiveIt, constructiveIt, endIt, printVal, std::move(Value{}));
   
   if (constructiveIt != endIt)
     throw std::runtime_error("Not all tokens where consumed!");

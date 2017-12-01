@@ -45,8 +45,8 @@ public:
 	  auto valueIt(values.find(it->content));
 
 	  if (valueIt != values.end())
-	    return valueIt->second;
-	  return makePrimitiveDefinedValue(std::make_shared<Token>(*it));
+	    return copy(valueIt->second);
+	  return makePrimitiveDefinedValue(std::make_unique<Token>(*it));
 	}
       ++it;
     }
@@ -74,12 +74,12 @@ public:
     NoEffect &operator=(T const)
     {
       return *this;
-    };
+    }
 
     NoEffect &operator++()
     {
       return *this;
-    };
+    }
   };
 
   NoEffect noEffect;
@@ -117,7 +117,7 @@ public:
   // - all threee iterators have to be comparable, and provide a copy function
   // - ConstructiveIt and DestructiveIt shall not be copied
   template<class DestructiveIT, class ConstrutiveIT, class EndIT>
-  DefinedValue evaluateTokens(DestructiveIT &destroyer, ConstrutiveIT &it, EndIT const &end, UnaryOperator const &prevPrefix, Value const &prevStored = {})
+  DefinedValue evaluateTokens(DestructiveIT &destroyer, ConstrutiveIT &it, EndIT const &end, UnaryOperator const &prevPrefix, Value &&prevStored)
   {
     if (it == end)
       throw std::runtime_error("Can't evaluate nothing yet :/");
@@ -155,15 +155,16 @@ public:
 	    }
 	  else
 	    --*prefixIt;
-	value = std::visit([this, &it, end](auto const &ret)
+	value = std::visit([this, &it, end](auto &&ret) noexcept
+			   -> DefinedValue
 			   {
 			     using T = std::remove_cv_t<std::remove_reference_t<decltype(ret)>>;
 
 			     if constexpr (std::is_same_v<T, DefinedValue>)
-			       return ret;
+					    return std::move(ret);
 			     else
-			       return evaluateTokens(noEffect, it, end, ret.second, ret.first);
-			   }, bestFunc->func(prevStored, value));
+			       return evaluateTokens(noEffect, it, end, ret.second, std::move(ret.first));
+			   }, bestFunc->func(*this, std::move(prevStored), std::move(value)));
       } while (!prevPrefixApplied);
     return value;
   }
