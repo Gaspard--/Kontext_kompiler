@@ -12,12 +12,18 @@ Since the last roadmap was invalidated so fast, my new attitude shall be add as 
     - [x] obtainable properties
     - [x] unobtainable properties
     - [ ] casting obtainable properties
-  - [ ] type handling
-    - [ ] primitives
+  - [x] type handling
+    - [x] primitives
       - [x] basic primitives
-      - [ ] type primitives
+      - [x] type primitives
     - [x] structs (unused but present)
   - [ ] builtin values and operators
     - [ ] basic side effect operators (+=, *= ...)
     - [ ] basic pure operators (+, *, ...)
+    - [ ] control structure
+      - [ ] if
+      - [ ] label
+      - [ ] goto
     - [ ] variable declaration and undeclaration operator(s)
+      - [ ] assignement (=)
+      - [ ] hiding
