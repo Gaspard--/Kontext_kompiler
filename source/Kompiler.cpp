@@ -66,7 +66,7 @@ void Kompiler::createDefaultDefinitions()
   		  [](Kompiler &kompiler, Value &&left, DefinedValue &&right)
   		    -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
   		    {
-  		      kompiler.values.emplace(std::get<std::unique_ptr<Token>>(left[0])->content, copy(right));
+  		      kompiler.values.insert_or_assign(std::get<std::unique_ptr<Token>>(left[0])->content, copy(right));
   		      return {std::move(right)};
   		    }});
   	    return {std::move(std::pair<Value, UnaryOperator>{std::move(val.value), set})};

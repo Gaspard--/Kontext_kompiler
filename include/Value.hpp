@@ -20,8 +20,6 @@ struct Type;
     std::unique_ptr<UnaryOperator>,					\
     std::unique_ptr<UnaryFunction>					\
 
-
-
 using Primitive = std::variant<KOMPILER_PRIMITIVE_LIST>;
 
 using Value = std::vector<Primitive>;

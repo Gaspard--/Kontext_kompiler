@@ -103,7 +103,7 @@ inline Value copy(Value const &v)
     std::visit([&result](auto const &p)
 	       {
 		 if constexpr (isUniquePtr(p))
-				result.emplace_back(new std::remove_reference_t<decltype(*p)>(*p));
+				result.emplace_back(std::remove_const_t<std::remove_reference_t<decltype(p)>>(new std::remove_reference_t<decltype(*p)>(*p)));
 		 else
 		   result.emplace_back(p);
 	       }, p);

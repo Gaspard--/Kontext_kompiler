@@ -106,7 +106,7 @@ public:
       checkIfBetterCandidate(func);
     for (auto &func : unaryPostfix.data)
       which |= checkIfBetterCandidate(func);
-    return {bestFunc , which};
+    return {bestFunc, which};
   }
 
   // Contract:
@@ -161,7 +161,7 @@ public:
 			     using T = std::remove_cv_t<std::remove_reference_t<decltype(ret)>>;
 
 			     if constexpr (std::is_same_v<T, DefinedValue>)
-					    return std::move(ret);
+			       return std::move(ret);
 			     else
 			       return evaluateTokens(noEffect, it, end, ret.second, std::move(ret.first));
 			   }, bestFunc->func(*this, std::move(prevStored), std::move(value)));

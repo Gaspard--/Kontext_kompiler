@@ -11,7 +11,7 @@ public:
   using PropertyId = unsigned long int;
   using Properties = std::unordered_set<PropertyId>;
 
-  static constexpr unsigned long int inf = static_cast<PropertyId>(-1);
+  static constexpr unsigned long int inf = static_cast<unsigned long int>(-1);
 
   struct PropertyInfo
   {
