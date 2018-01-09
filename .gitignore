@@ -31,10 +31,15 @@
 *.out
 *.app
 kontext_kompiler
+kontext_kompiler_unit
 
 # Build directory
 release/
 debug/
+cmake-build-debug
+cmake-build-release
 
 # Emacs backup files
 *~
+
+.idea
