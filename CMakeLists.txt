@@ -2,8 +2,18 @@ cmake_minimum_required(VERSION 2.6)
 
 project(kontext_kompiler)
 
+# init path
+set(TEST_NAME kontext_kompiler_unit)
 set(HEADER_DIRECTORY "include")
 set(SOURCE_DIRECTORY "source")
+
+# include Googletest Framework
+include(GTest.cmake)
+
+find_package(Threads REQUIRED)
+
+# link Googletest
+set(LIBS gtest gmock ${CMAKE_THREAD_LIBS_INIT})
 
 if (WIN32)
   set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /std:c++17")
@@ -18,11 +28,11 @@ endif(WIN32)
 
 message("Falgs used: '${CMAKE_CXX_FLAGS}'")
 
-
-file(GLOB_RECURSE SOURCES_FILE "${SOURCE_DIRECTORY}/*.cpp")
 file(GLOB_RECURSE HEADERS_FILE "${HEADER_DIRECTORY}/*.hpp")
 
-find_package(Threads REQUIRED)
+set(SOURCES_FILE source/Kompiler.cpp)
+set(SOURCE_MAIN_FILE source/main.cpp)
+set(SOURCES_TEST_FILE tests/KompileUnit.cpp)
 
 include_directories(
 	${HEADER_DIRECTORY}
@@ -31,9 +41,32 @@ include_directories(
 add_executable(
 	${PROJECT_NAME}
 	${SOURCES_FILE}
+    ${SOURCE_MAIN_FILE}
 	${HEADERS_FILE}
 )
 
-target_link_libraries(${PROJECT_NAME})
+add_executable(
+        ${TEST_NAME}
+        ${SOURCES_FILE}
+        ${SOURCES_TEST_FILE}
+)
+
+if(UNIX)
+    if (COVERAGE)
+        target_compile_options(${TEST_NAME} PRIVATE --coverage)
+        target_link_libraries(${TEST_NAME} PRIVATE --coverage ${LIBS})
+    else()
+        target_link_libraries(${TEST_NAME} ${LIBS})
+    endif()
+endif(UNIX)
+
+if (MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ox")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")
+    target_link_libraries(${TEST_NAME} ${LIBS})
+
+    # VS 2017 removed tr1
+    add_definitions(-DGTEST_HAS_TR1_TUPLE=0)
+endif(MSVC)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR})
