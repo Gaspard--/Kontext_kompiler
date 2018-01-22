@@ -32,7 +32,7 @@ file(GLOB_RECURSE HEADERS_FILE "${HEADER_DIRECTORY}/*.hpp")
 
 set(SOURCES_FILE source/Kompiler.cpp)
 set(SOURCE_MAIN_FILE source/main.cpp)
-set(SOURCES_TEST_FILE tests/KompileUnit.cpp)
+set(SOURCES_TEST_FILE tests/KompilerUnit.cpp)
 
 include_directories(
 	${HEADER_DIRECTORY}
