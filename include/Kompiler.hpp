@@ -67,7 +67,7 @@ public:
     return (propertyList.getCost(source, dest));
   }
 
-  
+
   struct NoEffect
   {
     template<class T>
@@ -92,7 +92,7 @@ public:
     auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &type](auto &func)
 				{
 				  long unsigned int currentCost(getTypeCastCost(type.properties, func.requiredProperties));
-				  
+
 				  if (currentCost < bestCost)
 				    {
 				      bestCost = currentCost;
@@ -114,7 +114,7 @@ public:
   // - both will only be incremented or assigned to greater values
   // - both won't be incremented further than `end`
   // - copies of `it` may be decremented and will always be between `begin` and `it`, and should not construct or destruct elements
-  // - all threee iterators have to be comparable, and provide a copy function
+  // - all three iterators have to be comparable, and provide a copy function
   // - ConstructiveIt and DestructiveIt shall not be copied
   template<class DestructiveIT, class ConstrutiveIT, class EndIT>
   DefinedValue evaluateTokens(DestructiveIT &destroyer, ConstrutiveIT &it, EndIT const &end, UnaryOperator const &prevPrefix, Value &&prevStored)
@@ -154,22 +154,24 @@ public:
 	      destroyer = it.copy();
 	    }
 	  else
-	    --*prefixIt;
-	value = std::visit([this, &it, end](auto &&ret) noexcept
-			   -> DefinedValue
-			   {
-			     using T = std::remove_cv_t<std::remove_reference_t<decltype(ret)>>;
+        {
+          --*prefixIt;
+          value = std::visit([this, &it, end](auto &&ret) noexcept
+                               -> DefinedValue
+                             {
+                               using T = std::remove_cv_t<std::remove_reference_t<decltype(ret)>>;
 
-			     if constexpr (std::is_same_v<T, DefinedValue>)
-					    return std::move(ret);
-			     else
-			       return evaluateTokens(noEffect, it, end, ret.second, std::move(ret.first));
-			   }, bestFunc->func(*this, std::move(prevStored), std::move(value)));
+                               if constexpr (std::is_same_v<T, DefinedValue>)
+                                 return std::move(ret);
+                               else
+                                 return evaluateTokens(noEffect, it, end, ret.second, std::move(ret.first));
+                             }, bestFunc->func(*this, std::move(prevStored), std::move(value)));
+        }
       } while (!prevPrefixApplied);
     return value;
   }
 
   void parseLine(std::string const &str);
-  
+
   void process(std::istream &);
 };
