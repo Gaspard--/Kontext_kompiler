@@ -61,7 +61,8 @@ DefinedValue makePrimitiveDefinedValue(T &&first)
 {
   DefinedValue result{{}, Type{0, {PropertyList::getPrimitiveProperty<std::remove_reference_t<T>>()}}};
 
-  result.value.emplace_back(std::move(first));
+  // according c++11 std::forward
+  result.value.emplace_back(std::forward<T>(first));
   return result;
 }
 
