@@ -54,7 +54,7 @@ struct ConstructiveIt
   std::string::const_iterator begin;
   std::string::const_iterator end;
   bool endReached;
-  
+
   ConstructiveIt &operator++()
   {
     for (; begin != end && isWhiteSpace(*begin); ++begin);
@@ -86,7 +86,7 @@ struct ConstructiveIt
 	    tokens.push_back({std::string(begin, it), TokenType::OPERATOR});
 	    begin = it;
 	  }
-	// std::cout << "Created new token: " << tokens.back().content << std::endl;
+	std::cout << "Created new token: " << tokens.back().content << std::endl;
       }
     return *this;
   }
@@ -132,7 +132,7 @@ struct ConstructiveIt
   {
     return tokens.size() == 1;
   }
-    
+
   bool operator!=(DestructiveIt const &other) const
   {
     return !(*this == other);
@@ -150,30 +150,30 @@ inline void Kompiler::parseLine(std::string const &str)
 
   UnaryOperator printVal;
 
-  printVal.addFunc({{propertyList.createProperty({}, PropertyList::inf - 1)},
-  	[](Kompiler &, Value &&, DefinedValue &&value)
-  	  -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
-  	  {
-  	    std::cout << "Value contents: ";
-  	    bool first(true);
-  	    for (Primitive const &p : value.value)
-  	      {
-  		if (!first)
-  		  std::cout << ", ";
-  		first = true;
-  		std::visit([](auto const &p)
-  			   {
-  			     if constexpr (isUniquePtr(p))
-  			       std::cout << *p;
-  			     else
-  			       std::cout << p;
-  			   }, p);
-  	      }
-  	    std::cout << std::endl;
-  	    return {std::move(value)};
-  	  }});
+  printVal.addFunc({{propertyList.createProperty({}, 2000)},
+		    [](Kompiler &, Value &&, DefinedValue &&value) -> std::variant<DefinedValue, std::pair<Value, UnaryOperator>>
+		    {
+		     std::cout << "Value type: " << value.type << "; ";
+		     std::cout << "Value contents: ";
+		     bool first(true);
+		     for (Primitive const &p : value.value)
+		       {
+			 if (!first)
+			   std::cout << ", ";
+			 first = true;
+			 std::visit([](auto const &p)
+				    {
+				      if constexpr (requires{*p;})
+				        std::cout << *p;
+				      else
+                std::cout << p;
+				    }, p);
+		       }
+		     std::cout << std::endl;
+		     return {std::move(value)};
+		    }});
   evaluateTokens(destructiveIt, constructiveIt, endIt, printVal, std::move(Value{}));
-  
+
   if (constructiveIt != endIt)
     throw std::runtime_error("Not all tokens where consumed!");
 }

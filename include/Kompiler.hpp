@@ -5,6 +5,7 @@
 #include <memory>
 #include <iostream>
 #include <list>
+#include <optional>
 
 #include "Stack.hpp"
 #include "Lookup.hpp"
@@ -67,7 +68,7 @@ public:
     return (propertyList.getCost(source, dest));
   }
 
-  
+
   struct NoEffect
   {
     template<class T>
@@ -88,11 +89,11 @@ public:
   {
     UnaryFunction const *bestFunc(nullptr);
     int which(false);
-    long unsigned int bestCost(PropertyList::inf);
+    long unsigned int bestCost(PropertyList::Cost::inf);
     auto checkIfBetterCandidate([this, &bestCost, &bestFunc, &type](auto &func)
 				{
 				  long unsigned int currentCost(getTypeCastCost(type.properties, func.requiredProperties));
-				  
+
 				  if (currentCost < bestCost)
 				    {
 				      bestCost = currentCost;
@@ -170,6 +171,6 @@ public:
   }
 
   void parseLine(std::string const &str);
-  
+
   void process(std::istream &);
 };

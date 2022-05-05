@@ -3,11 +3,19 @@
 #include "Value.hpp"
 #include "Properties.hpp"
 
+#include <cassert>
+
 struct Kompiler;
+struct Type;
+
+struct StructDefinition
+{
+  std::vector<std::pair<std::string, Type>> fields;
+};
 
 struct Type
 {
-  DataType dataType;
+  std::variant<StructDefinition, PropertyList::PropertyId> dataType;
   PropertyList::Properties properties;
 };
 
@@ -15,9 +23,6 @@ struct DefinedValue
 {
   Value value;
   Type type;
-  DefinedValue(DefinedValue const &) = delete;
-  DefinedValue(DefinedValue &&) = default;
-  DefinedValue &operator=(DefinedValue &&) = default;
 };
 
 struct UnaryOperator
@@ -59,15 +64,46 @@ struct UnaryFunction
 template<class T>
 DefinedValue makePrimitiveDefinedValue(T &&first)
 {
-  DefinedValue result{{}, Type{0, {PropertyList::getPrimitiveProperty<std::remove_reference_t<T>>()}}};
+  DefinedValue result{{}, Type{PropertyList::getPrimitiveProperty<std::remove_reference_t<T>>(), {PropertyList::getPrimitiveProperty<std::remove_reference_t<T>>()}}};
 
   result.value.emplace_back(std::move(first));
   return result;
 }
 
-inline std::ostream &operator<<(std::ostream &out, Type const &)
+inline std::ostream &operator<<(std::ostream &out, Type const &type);
+
+inline std::ostream &operator<<(std::ostream &out, StructDefinition const &type)
 {
-  out << "TODO: add way to print type";
+  for (auto const &[name, value] : type.fields)
+    {
+      out << name << ": " << value << " - ";
+    }
+  return out;
+}
+
+inline std::ostream &operator<<(std::ostream &out, Type const &type)
+{
+  if (auto *structDefinition = std::get_if<StructDefinition>(&type.dataType))
+    {
+      out << structDefinition;
+    }
+  else
+    {
+      unsigned int primitiveId = std::get<unsigned int>(type.dataType);
+#define X(a) #a
+      char const *names[] = {KOMPILER_PRIMITIVE_X_LIST};
+#undef X
+
+      assert(primitiveId < sizeof(names));
+      if (primitiveId < sizeof(names))
+	{
+	  out << names[primitiveId];
+	}
+      else
+	{
+	  out << "<Unknown type>";
+	}
+    }
   return out;
 }
 
@@ -83,18 +119,6 @@ inline std::ostream &operator<<(std::ostream &out, UnaryFunction const &)
   return out;
 }
 
-template<class T>
-constexpr bool isUniquePtr(std::unique_ptr<T> const &)
-{
-  return true;
-}
-
-template<class T>
-constexpr bool isUniquePtr(T const &)
-{
-  return false;
-}
-
 inline Value copy(Value const &v)
 {
   Value result;
@@ -102,16 +126,15 @@ inline Value copy(Value const &v)
   for (auto const &p : v)
     std::visit([&result](auto const &p)
 	       {
-		 if constexpr (isUniquePtr(p))
-				result.emplace_back(std::remove_const_t<std::remove_reference_t<decltype(p)>>(new std::remove_reference_t<decltype(*p)>(*p)));
-		 else
-		   result.emplace_back(p);
+           if constexpr (requires {*p;})
+             result.emplace_back(std::remove_const_t<std::remove_reference_t<decltype(p)>>(new std::remove_reference_t<decltype(*p)>(*p)));
+           else
+             result.emplace_back(p);
 	       }, p);
-  return std::move(result);
+  return result;
 }
 
 inline DefinedValue copy(DefinedValue const &v)
 {
   return DefinedValue{copy(v.value), v.type};
 }
-

@@ -8,18 +8,54 @@
 class PropertyList
 {
 public:
-  using PropertyId = unsigned long int;
+  using PropertyId = uint32_t;
   using Properties = std::unordered_set<PropertyId>;
 
-  static constexpr unsigned long int inf = static_cast<unsigned long int>(-1);
+  struct Cost
+  {
+    static constexpr unsigned long int inf = static_cast<unsigned long int>(-1);
+    unsigned long int val;
+
+    Cost(unsigned long int val) : val(val) {}
+
+    auto &operator+=(Cost const &other)
+    {
+      if (val != inf)
+	{
+	  if (other.val == inf)
+	    val = inf;
+	  else
+	    val += other.val;
+	}
+      return *this;
+    }
+
+    auto operator+(Cost const &other) const
+    {
+      auto copy(other);
+
+      copy += *this;
+      return copy;
+    }
+
+    bool isInf() const
+    {
+      return val == inf;
+    }
+
+    operator long unsigned int()
+    {
+      return val;
+    }
+  };
 
   struct PropertyInfo
   {
     Properties requirements;
-    unsigned long int cost;
+    Cost cost;
 
     PropertyInfo(Properties requirements,
-		 unsigned long int cost)
+		 Cost cost)
       : requirements(requirements),
 	cost(cost)
     {
@@ -51,24 +87,20 @@ public:
     : count(), propertyInfos{}
   {
     while (count < std::variant_size_v<Primitive>)
-      createProperty({}, PropertyList::inf);
+      createProperty({}, PropertyList::Cost::inf);
   }
 
-  long unsigned int getCost(Properties &possessed, Properties const &required)
+  Cost getCost(Properties &possessed, Properties const &required)
   {
-    long unsigned int cost(0u);
+    Cost cost(0u);
 
     for (auto &property : required)
       if (possessed.find(property) == possessed.end())
 	{
 	  possessed.insert(property);
+	  PropertyInfo const &info(propertyInfos.at(property));
 
-	  PropertyInfo const &info(propertyInfos[property]);
-	  long unsigned int reqCost(getCost(possessed, info.requirements));
-
-	  if (info.cost == inf || reqCost == inf)
-	    return inf;
-	  cost += info.cost + reqCost;
+	  cost += info.cost + getCost(possessed, info.requirements);
 	}
     return cost;
   }

@@ -13,22 +13,19 @@ struct UnaryOperator;
 struct UnaryFunction;
 struct Type;
 
-#define KOMPILER_PRIMITIVE_LIST						\
-  unsigned long int, double, void *,					\
-    std::unique_ptr<Token>,						\
-    std::unique_ptr<Type>,						\
-    std::unique_ptr<UnaryOperator>,					\
-    std::unique_ptr<UnaryFunction>					\
+#define KOMPILER_PRIMITIVE_X_LIST				        \
+  X(unsigned long int),							\
+    X(double),								\
+    X(void *),								\
+    X(std::unique_ptr<Token>),						\
+    X(std::unique_ptr<Type>),						\
+    X(std::unique_ptr<UnaryOperator>),					\
+    X(std::unique_ptr<UnaryFunction>)					\
 
-using Primitive = std::variant<KOMPILER_PRIMITIVE_LIST>;
+#define X(a) a
+
+using Primitive = std::variant<KOMPILER_PRIMITIVE_X_LIST>;
+
+#undef X
 
 using Value = std::vector<Primitive>;
-
-using PrimitiveId = unsigned long int;
-
-struct StructDefinition : public std::map<std::string, std::variant<StructDefinition, PrimitiveId>>
-{
-  using std::map<std::string, std::variant<StructDefinition, PrimitiveId>>::map;
-};
-
-using DataType = std::variant<StructDefinition, PrimitiveId>;
